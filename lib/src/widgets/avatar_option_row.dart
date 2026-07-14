@@ -7,7 +7,7 @@ import 'avatar_selectable_thumbnail.dart';
 /// #7 (Elementos seleccionables — Row): fila horizontal de opciones.
 /// Máximo 5 items según la especificación (ej. "Color de fondo").
 class AvatarOptionRow extends StatelessWidget {
-  const AvatarOptionRow({
+  AvatarOptionRow({
     required this.category,
     required this.selectedOptionId,
     required this.onSelected,

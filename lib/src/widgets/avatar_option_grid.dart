@@ -7,7 +7,7 @@ import 'avatar_selectable_thumbnail.dart';
 /// #8 (Elementos seleccionables — Grid): cuadrícula de opciones ilustradas.
 /// Máximo 10 items según la especificación (Face/Hair/Body/Extra).
 class AvatarOptionGrid extends StatelessWidget {
-  const AvatarOptionGrid({
+  AvatarOptionGrid({
     required this.category,
     required this.selectedOptionId,
     required this.onSelected,
