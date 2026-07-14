@@ -89,22 +89,29 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AvatarCreatorController>.value(
       value: _controller,
-      child: Scaffold(
-        appBar: BcHeader(
-          type: BcHeaderType.PageHeader,
-          title: widget.config.title,
-          isEnabledLogo: false,
-          itemLeftIcon: BdsFunctionalIcons.ANGLE_LEFT,
-          itemLeftLabel: widget.config.backButtonLabel,
-          itemLeftOnTap: _handleCancel,
-        ),
-        body: Consumer<AvatarCreatorController>(
-          builder: (context, controller, _) {
-            final activeCategory = controller.activeCategory;
-            final selectedOptionId =
-                controller.selection.selectedOptionFor(activeCategory.id);
+      child: Consumer<AvatarCreatorController>(
+        builder: (context, controller, _) {
+          final activeCategory = controller.activeCategory;
+          final selectedOptionId =
+              controller.selection.selectedOptionFor(activeCategory.id);
 
-            return Column(
+          return Scaffold(
+            appBar: BcHeader(
+              type: BcHeaderType.PageHeader,
+              title: widget.config.title,
+              isEnabledLogo: false,
+              itemLeftIcon: BdsFunctionalIcons.ANGLE_LEFT,
+              itemLeftLabel: widget.config.backButtonLabel,
+              itemLeftOnTap: _handleCancel,
+            ),
+            // El footer vive en `bottomNavigationBar` (no como último hijo de
+            // un Column con Expanded) a propósito: en Safari/iOS, un Column
+            // de alto completo cuyo Expanded depende de la altura del body
+            // de un Scaffold puede colapsar a 0px cuando la barra de
+            // direcciones se expande/colapsa dinámicamente. Dejar que el
+            // propio Scaffold reparta el espacio entre body y
+            // bottomNavigationBar evita ese colapso.
+            body: Column(
               children: [
                 const AvatarPreview(),
                 const AvatarCategoryTabs(),
@@ -137,22 +144,22 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                     ),
                   ),
                 ),
-                BcButtonsFooter(
-                  model: BcButtonsFooterModel(
-                    primaryButtonText: widget.config.saveButtonText,
-                    secondaryButtonText: widget.config.cancelButtonText,
-                    onPrimaryButtonPressed:
-                        controller.isSaving ? null : _handleSave,
-                    onSecondaryButtonPressed: _handleCancel,
-                    primaryButtonEnable: !controller.isSaving,
-                    secondaryButtonEnable: widget.config.secondaryButtonEnabled,
-                    axis: Axis.vertical,
-                  ),
-                ),
               ],
-            );
-          },
-        ),
+            ),
+            bottomNavigationBar: BcButtonsFooter(
+              model: BcButtonsFooterModel(
+                primaryButtonText: widget.config.saveButtonText,
+                secondaryButtonText: widget.config.cancelButtonText,
+                onPrimaryButtonPressed:
+                    controller.isSaving ? null : _handleSave,
+                onSecondaryButtonPressed: _handleCancel,
+                primaryButtonEnable: !controller.isSaving,
+                secondaryButtonEnable: widget.config.secondaryButtonEnabled,
+                axis: Axis.vertical,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
