@@ -104,47 +104,42 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
               itemLeftLabel: widget.config.backButtonLabel,
               itemLeftOnTap: _handleCancel,
             ),
-            // El footer vive en `bottomNavigationBar` (no como último hijo de
-            // un Column con Expanded) a propósito: en Safari/iOS, un Column
-            // de alto completo cuyo Expanded depende de la altura del body
-            // de un Scaffold puede colapsar a 0px cuando la barra de
-            // direcciones se expande/colapsa dinámicamente. Dejar que el
-            // propio Scaffold reparta el espacio entre body y
-            // bottomNavigationBar evita ese colapso.
-            body: Column(
-              children: [
-                const AvatarPreview(),
-                const AvatarCategoryTabs(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AvatarSectionLabel(label: activeCategory.label),
-                        if (activeCategory.kind == AvatarCategoryKind.colorRow)
-                          AvatarOptionRow(
-                            category: activeCategory,
-                            selectedOptionId: selectedOptionId,
-                            onSelected: (optionId) => controller.selectOption(
-                              activeCategory.id,
-                              optionId,
-                            ),
-                          )
-                        else
-                          AvatarOptionGrid(
-                            category: activeCategory,
-                            selectedOptionId: selectedOptionId,
-                            onSelected: (optionId) => controller.selectOption(
-                              activeCategory.id,
-                              optionId,
-                            ),
-                          ),
-                        const SizedBox(height: BdsSpacing.SPACE_S_2),
-                      ],
+            // Todo el body vive en un único scroll, sin `Expanded`: en
+            // pantallas cortas (Safari/iOS con barra de direcciones visible),
+            // un `Expanded` que depende de la altura del body de un Scaffold
+            // puede colapsar a 0px y esconder el contenido por completo. Con
+            // un solo `SingleChildScrollView` el usuario siempre puede llegar
+            // a las opciones haciendo scroll, sin importar el alto real
+            // disponible.
+            backgroundColor: Colors.white,
+            body: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AvatarPreview(),
+                  const AvatarCategoryTabs(),
+                  AvatarSectionLabel(label: activeCategory.label),
+                  if (activeCategory.kind == AvatarCategoryKind.colorRow)
+                    AvatarOptionRow(
+                      category: activeCategory,
+                      selectedOptionId: selectedOptionId,
+                      onSelected: (optionId) => controller.selectOption(
+                        activeCategory.id,
+                        optionId,
+                      ),
+                    )
+                  else
+                    AvatarOptionGrid(
+                      category: activeCategory,
+                      selectedOptionId: selectedOptionId,
+                      onSelected: (optionId) => controller.selectOption(
+                        activeCategory.id,
+                        optionId,
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  const SizedBox(height: BdsSpacing.SPACE_S_2),
+                ],
+              ),
             ),
             bottomNavigationBar: BcButtonsFooter(
               model: BcButtonsFooterModel(
