@@ -101,31 +101,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Mi perfil')),
-      body: Center(
-        child: Semantics(
-          label: 'Foto de perfil',
-          button: true,
-          child: GestureDetector(
-            onTap: _openEditImageSheet,
-            child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 56,
-                  backgroundImage: _avatarImageBytes != null ? MemoryImage(_avatarImageBytes!) : null,
-                  child: _avatarImageBytes == null ? const Icon(Icons.person, size: 48) : null,
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: CircleAvatar(
-                    radius: 16,
-                    child: Icon(Icons.camera_alt, size: 16, color: Theme.of(context).colorScheme.onPrimary),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            color: Theme.of(context).colorScheme.primaryContainer,
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              'Preview build: usa componentes de Material en lugar de los '
+              'reales de bds_mobile (BcHeader/BcIconButton/BcCardContainer/'
+              'BcButtonsFooter), solo para poder desplegarse sin el '
+              'Artifactory privado de Bancolombia. La estructura e '
+              'interacción son las reales del widget.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
-                ),
-              ],
             ),
           ),
-        ),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    label: 'Foto de perfil',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: _openEditImageSheet,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 56,
+                            backgroundImage:
+                                _avatarImageBytes != null ? MemoryImage(_avatarImageBytes!) : null,
+                            child: _avatarImageBytes == null ? const Icon(Icons.person, size: 48) : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 16,
+                              child: Icon(
+                                Icons.camera_alt,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Toca el avatar para crear/editar'),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
