@@ -1,0 +1,31 @@
+name: avatar_flutter_example
+description: App de ejemplo para el widget avatar_flutter.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  avatar_flutter:
+    path: ../
+  provider: ^6.1.5
+  # Requerido para inicializar las foundations de bds_mobile (BcThemeNotifier,
+  # BcBrandNotifier, CoreFoundations.themeProvider) — cualquier canal que
+  # embeba avatar_flutter ya debe tener esto configurado en su app shell.
+  bds_core_foundations:
+    hosted:
+      name: bds_core_foundations
+      url: https://artifactory.apps.bancolombia.com/artifactory/api/pub/pub-bancolombia
+    version: ^2.13.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

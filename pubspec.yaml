@@ -1,0 +1,35 @@
+name: avatar_flutter
+description: Widget de creación y edición de avatar del SDB, listo para embeberse en cualquier canal.
+version: 0.1.0
+homepage: https://www.grupobancolombia.com
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bds_mobile:
+    hosted:
+      name: bds_mobile
+      url: https://artifactory.apps.bancolombia.com/artifactory/api/pub/pub-bancolombia
+    version: ^8.151.100
+  provider: ^6.1.5
+  flutter_svg: ^2.2.0
+  equatable: ^2.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mockito: ^5.4.4
+  build_runner: ^2.4.13
+
+flutter:
+  assets:
+    - assets/avatar/face/
+    - assets/avatar/hair/
+    - assets/avatar/body/
+    - assets/avatar/extra/
