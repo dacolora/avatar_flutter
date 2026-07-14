@@ -67,7 +67,7 @@ AvatarLayerCategory _placeholderLayerCategory({
   required String label,
   required IconData icon,
   required String assetPath,
-  int optionCount = 5,
+  int optionCount = 10,
 }) {
   return AvatarLayerCategory(
     id: id,

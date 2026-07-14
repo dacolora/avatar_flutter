@@ -20,7 +20,11 @@ class AvatarFlutterExampleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Avatar Flutter — Ejemplo',
-      theme: ThemeData(colorSchemeSeed: const Color(0xFFF3D53C), useMaterial3: true),
+      theme: ThemeData(
+        colorSchemeSeed: const Color(0xFFF3D53C),
+        useMaterial3: true,
+        scaffoldBackgroundColor: Colors.white,
+      ),
       home: const ProfileScreen(),
     );
   }
