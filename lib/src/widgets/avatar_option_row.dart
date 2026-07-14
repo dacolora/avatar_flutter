@@ -27,10 +27,12 @@ class AvatarOptionRow extends StatelessWidget {
       child: Row(
         children: [
           for (int index = 0; index < category.options.length; index++) ...[
-            AvatarSelectableThumbnail(
-              option: category.options[index],
-              isSelected: category.options[index].id == selectedOptionId,
-              onTap: () => onSelected(category.options[index].id),
+            Expanded(
+              child: AvatarSelectableThumbnail(
+                option: category.options[index],
+                isSelected: category.options[index].id == selectedOptionId,
+                onTap: () => onSelected(category.options[index].id),
+              ),
             ),
             if (index != category.options.length - 1)
               const SizedBox(width: 16.0),

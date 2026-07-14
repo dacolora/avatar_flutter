@@ -29,7 +29,7 @@ class AvatarOptionGrid extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: category.options.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
+          crossAxisCount: 3,
           mainAxisSpacing: 16.0,
           crossAxisSpacing: 16.0,
         ),
