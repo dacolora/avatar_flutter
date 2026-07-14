@@ -1,14 +1,17 @@
-import 'package:bds_mobile/atoms/atoms.dart';
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/avatar_creator_controller.dart';
 
-/// #4 (Categorías) + #5 (Card container): tira horizontal de
-/// `BcIconButton.ghost`, uno por categoría, solo uno activo a la vez.
-/// Full width, borde inferior de 1px y gradiente en los bordes para
-/// pantallas pequeñas donde el contenido desborda.
+/// #4 (Categorías) + #5 (Card container): tira horizontal de icon-buttons,
+/// uno por categoría, solo uno activo a la vez. Full width, borde inferior
+/// de 1px y gradiente en los bordes para pantallas pequeñas donde el
+/// contenido desborda.
+///
+/// PREVIEW BUILD: en producción #4/#5 usan `BcIconButton.ghost` +
+/// `BcCardContainer` de bds_mobile; aquí se sustituyen por un `IconButton` +
+/// `Container` planos de Material solo para poder compilar sin la
+/// dependencia privada de Artifactory.
 class AvatarCategoryTabs extends StatelessWidget {
   const AvatarCategoryTabs({super.key});
 
@@ -18,45 +21,38 @@ class AvatarCategoryTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.watch<AvatarCreatorController>();
 
-    return BcCardContainer(
-      strokeStyle: BcStrokeCardContainerStyle.None,
-      padding: EdgeInsets.zero,
-      child: Container(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: _dividerColor, width: 1)),
-        ),
-        child: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Colors.transparent,
-              Colors.white,
-              Colors.white,
-              Colors.transparent,
-            ],
-            stops: [0, 0.03, 0.97, 1],
-          ).createShader(bounds),
-          blendMode: BlendMode.dstIn,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-              horizontal: BdsSpacing.SPACE_S_1,
-              vertical: BdsSpacing.SPACE_XS_3,
-            ),
-            child: Row(
-              children: [
-                for (final category in controller.categories) ...[
-                  _CategoryTabButton(
-                    isSelected: category.id == controller.activeCategoryId,
-                    icon: category.icon,
-                    label: category.label,
-                    onPressed: () => controller.selectCategory(category.id),
-                  ),
-                  const SizedBox(width: BdsSpacing.SPACE_S_2),
-                ],
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: _dividerColor, width: 1)),
+      ),
+      child: ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.transparent,
+            Colors.white,
+            Colors.white,
+            Colors.transparent,
+          ],
+          stops: [0, 0.03, 0.97, 1],
+        ).createShader(bounds),
+        blendMode: BlendMode.dstIn,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              for (final category in controller.categories) ...[
+                _CategoryTabButton(
+                  isSelected: category.id == controller.activeCategoryId,
+                  icon: category.icon,
+                  label: category.label,
+                  onPressed: () => controller.selectCategory(category.id),
+                ),
+                const SizedBox(width: 24),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -79,18 +75,24 @@ class _CategoryTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BcIconButton.ghost(
-      // `BcIconButton.ghost` only syncs `isSelected` from its parent on the
-      // very first build (it manages the pressed state internally after
-      // that), so the key is forced to change whenever the externally-driven
-      // selection changes to guarantee the active tab always re-renders.
-      key: ValueKey('avatar-category-tab-$label-$isSelected'),
-      icon: icon,
-      isSelected: isSelected,
-      ghostSize: BcGhostIconButtonSize.XLarge,
-      selectedAccessibility: '$label seleccionado',
-      notSelectedAccessibility: label,
-      onPressed: onPressed,
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isSelected ? scheme.primaryContainer : Colors.transparent,
+          ),
+          child: Icon(icon, color: isSelected ? scheme.primary : scheme.onSurfaceVariant),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../models/avatar_layer_category.dart';
@@ -7,7 +6,7 @@ import 'avatar_selectable_thumbnail.dart';
 /// #8 (Elementos seleccionables — Grid): cuadrícula de opciones ilustradas.
 /// Máximo 10 items según la especificación (Face/Hair/Body/Extra).
 class AvatarOptionGrid extends StatelessWidget {
-  const AvatarOptionGrid({
+  AvatarOptionGrid({
     required this.category,
     required this.selectedOptionId,
     required this.onSelected,
@@ -24,15 +23,15 @@ class AvatarOptionGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: BdsSpacing.SPACE_S_1),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: category.options.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 5,
-          mainAxisSpacing: BdsSpacing.SPACE_S_1,
-          crossAxisSpacing: BdsSpacing.SPACE_S_1,
+          mainAxisSpacing: 16.0,
+          crossAxisSpacing: 16.0,
         ),
         itemBuilder: (context, index) {
           final option = category.options[index];

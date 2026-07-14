@@ -1,4 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -37,7 +36,7 @@ class AvatarSelectableThumbnail extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           width: size,
           height: size,
-          padding: const EdgeInsets.all(BdsSpacing.SPACE_XS_1),
+          padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
@@ -51,7 +50,7 @@ class AvatarSelectableThumbnail extends StatelessWidget {
                 : ColoredBox(
                     color: const Color(0xFFF2F2F3),
                     child: Padding(
-                      padding: const EdgeInsets.all(BdsSpacing.SPACE_XS_2),
+                      padding: const EdgeInsets.all(4),
                       child: SvgPicture.asset(
                         option.assetPath!,
                         package: 'avatar_flutter',

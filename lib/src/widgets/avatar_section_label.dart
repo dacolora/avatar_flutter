@@ -1,4 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// #6 (Label): título de la sección de opciones de la categoría activa.
@@ -12,12 +11,7 @@ class AvatarSectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        BdsSpacing.SPACE_S_1,
-        BdsSpacing.SPACE_S_1,
-        BdsSpacing.SPACE_S_1,
-        BdsSpacing.SPACE_XS_3,
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
         label,
         style: Theme.of(context).textTheme.titleSmall,

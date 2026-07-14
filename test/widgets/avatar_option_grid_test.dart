@@ -43,7 +43,7 @@ void main() {
     expect(selectedOptionId, 'blue');
   });
 
-  testWidgets('AvatarOptionGrid enforces the 10-item spec limit', (tester) {
+  testWidgets('AvatarOptionGrid enforces the 10-item spec limit', (tester) async {
     AvatarLayerCategory tooManyOptions() {
       return AvatarLayerCategory(
         id: 'body',

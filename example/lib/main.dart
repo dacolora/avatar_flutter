@@ -1,35 +1,27 @@
 import 'dart:typed_data';
 
 import 'package:avatar_flutter/avatar_flutter.dart';
-import 'package:bds_core_foundations/core_foundations.dart';
-import 'package:bds_mobile/atoms/atoms.dart';
-import 'package:bds_mobile/foundations/foundations.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 void main() => runApp(const AvatarFlutterExampleApp());
 
 /// App de ejemplo: muestra cómo un canal embebe `avatar_flutter`.
 ///
-/// `bds_mobile` espera que su app anfitriona provea sus foundations
-/// (BcThemeNotifier, BcBrandNotifier, CoreFoundations.themeProvider) en la
-/// raíz — cualquier canal real que use `avatar_flutter` ya tendrá esto
-/// configurado en su propio app shell.
+/// PREVIEW BUILD: en producción `bds_mobile` espera que la app anfitriona
+/// provea sus foundations (BcThemeNotifier, BcBrandNotifier,
+/// CoreFoundations.themeProvider) en la raíz — ver README. Ese bootstrap se
+/// omite aquí porque esta build sustituye los componentes bds_mobile por
+/// equivalentes de Material para poder compilar sin la dependencia privada
+/// de Artifactory.
 class AvatarFlutterExampleApp extends StatelessWidget {
   const AvatarFlutterExampleApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => BcThemeNotifier()),
-        ChangeNotifierProvider(create: (_) => BcBrandNotifier()),
-        ...CoreFoundations.themeProvider,
-      ],
-      child: const MaterialApp(
-        title: 'Avatar Flutter — Ejemplo',
-        home: ProfileScreen(),
-      ),
+    return MaterialApp(
+      title: 'Avatar Flutter — Ejemplo',
+      theme: ThemeData(colorSchemeSeed: const Color(0xFFF3D53C), useMaterial3: true),
+      home: const ProfileScreen(),
     );
   }
 }
@@ -110,12 +102,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Mi perfil')),
       body: Center(
-        child: BcAvatar(
-          image: _avatarImageBytes != null ? MemoryImage(_avatarImageBytes!) : null,
-          size: BcAvatarSize.XLarge,
-          semanticLabel: 'Foto de perfil',
-          actionableIcon: Icons.camera_alt,
-          onTap: _openEditImageSheet,
+        child: Semantics(
+          label: 'Foto de perfil',
+          button: true,
+          child: GestureDetector(
+            onTap: _openEditImageSheet,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 56,
+                  backgroundImage: _avatarImageBytes != null ? MemoryImage(_avatarImageBytes!) : null,
+                  child: _avatarImageBytes == null ? const Icon(Icons.person, size: 48) : null,
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: CircleAvatar(
+                    radius: 16,
+                    child: Icon(Icons.camera_alt, size: 16, color: Theme.of(context).colorScheme.onPrimary),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

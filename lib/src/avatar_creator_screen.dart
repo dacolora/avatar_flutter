@@ -1,6 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
-import 'package:bds_mobile/foundations/foundations.dart';
-import 'package:bds_mobile/organisms/organisms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
@@ -90,13 +87,13 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
     return ChangeNotifierProvider<AvatarCreatorController>.value(
       value: _controller,
       child: Scaffold(
-        appBar: BcHeader(
-          type: BcHeaderType.PageHeader,
-          title: widget.config.title,
-          isEnabledLogo: false,
-          itemLeftIcon: BdsFunctionalIcons.ANGLE_LEFT,
-          itemLeftLabel: widget.config.backButtonLabel,
-          itemLeftOnTap: _handleCancel,
+        appBar: AppBar(
+          title: Text(widget.config.title),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            tooltip: widget.config.backButtonLabel,
+            onPressed: _handleCancel,
+          ),
         ),
         body: Consumer<AvatarCreatorController>(
           builder: (context, controller, _) {
@@ -132,21 +129,36 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                               optionId,
                             ),
                           ),
-                        const SizedBox(height: BdsSpacing.SPACE_S_2),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
                 ),
-                BcButtonsFooter(
-                  model: BcButtonsFooterModel(
-                    primaryButtonText: widget.config.saveButtonText,
-                    secondaryButtonText: widget.config.cancelButtonText,
-                    onPrimaryButtonPressed:
-                        controller.isSaving ? null : _handleSave,
-                    onSecondaryButtonPressed: _handleCancel,
-                    primaryButtonEnable: !controller.isSaving,
-                    secondaryButtonEnable: widget.config.secondaryButtonEnabled,
-                    axis: Axis.vertical,
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: controller.isSaving ? null : _handleSave,
+                            child: Text(widget.config.saveButtonText),
+                          ),
+                        ),
+                        if (widget.config.secondaryButtonEnabled) ...[
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _handleCancel,
+                              child: Text(widget.config.cancelButtonText),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ],
