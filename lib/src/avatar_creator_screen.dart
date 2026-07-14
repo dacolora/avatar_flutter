@@ -86,22 +86,29 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AvatarCreatorController>.value(
       value: _controller,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.config.title),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new),
-            tooltip: widget.config.backButtonLabel,
-            onPressed: _handleCancel,
-          ),
-        ),
-        body: Consumer<AvatarCreatorController>(
-          builder: (context, controller, _) {
-            final activeCategory = controller.activeCategory;
-            final selectedOptionId =
-                controller.selection.selectedOptionFor(activeCategory.id);
+      child: Consumer<AvatarCreatorController>(
+        builder: (context, controller, _) {
+          final activeCategory = controller.activeCategory;
+          final selectedOptionId =
+              controller.selection.selectedOptionFor(activeCategory.id);
 
-            return Column(
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(widget.config.title),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new),
+                tooltip: widget.config.backButtonLabel,
+                onPressed: _handleCancel,
+              ),
+            ),
+            // El footer vive en `bottomNavigationBar` (no como último hijo de
+            // un Column con Expanded) a propósito: en Safari/iOS, un Column
+            // de alto completo cuyo Expanded depende de la altura del body
+            // de un Scaffold puede colapsar a 0px cuando la barra de
+            // direcciones se expande/colapsa dinámicamente. Dejar que el
+            // propio Scaffold reparta el espacio entre body y
+            // bottomNavigationBar evita ese colapso.
+            body: Column(
               children: [
                 const AvatarPreview(),
                 const AvatarCategoryTabs(),
@@ -134,37 +141,38 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                     ),
                   ),
                 ),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: controller.isSaving ? null : _handleSave,
-                            child: Text(widget.config.saveButtonText),
-                          ),
-                        ),
-                        if (widget.config.secondaryButtonEnabled) ...[
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: _handleCancel,
-                              child: Text(widget.config.cancelButtonText),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
               ],
-            );
-          },
-        ),
+            ),
+            bottomNavigationBar: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: controller.isSaving ? null : _handleSave,
+                        child: Text(widget.config.saveButtonText),
+                      ),
+                    ),
+                    if (widget.config.secondaryButtonEnabled) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: _handleCancel,
+                          child: Text(widget.config.cancelButtonText),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
