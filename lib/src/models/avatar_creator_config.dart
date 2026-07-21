@@ -34,8 +34,6 @@ class AvatarCreatorConfig {
     this.title = 'Crear avatar',
     this.backButtonLabel = '',
     this.saveButtonText = 'Guardar',
-    this.cancelButtonText = 'Cancelar',
-    this.secondaryButtonEnabled = true,
     this.onView,
     this.onSave,
     this.onSaveSuccess,
@@ -96,19 +94,10 @@ class AvatarCreatorConfig {
   /// la barra superior.
   final String backButtonLabel;
 
-  /// Texto del botón principal del pie de pantalla ("Guardar" por defecto).
+  /// Texto del único botón del pie de pantalla ("Guardar" por defecto). El
+  /// footer ya no tiene un botón "Cancelar" propio — cancelar se hace desde
+  /// el botón de volver del header (ver [onCancel]).
   final String saveButtonText;
-
-  /// Texto del botón secundario del pie de pantalla ("Cancelar" por
-  /// defecto). Solo se usa si [secondaryButtonEnabled] es `true`.
-  final String cancelButtonText;
-
-  /// Si es `false`, el botón secundario ("Cancelar") del pie de pantalla no
-  /// se muestra en absoluto — solo queda el botón principal ("Guardar").
-  /// Útil, por ejemplo, en flujos donde el canal quiere forzar a que el
-  /// usuario complete la creación del avatar y no pueda simplemente
-  /// cancelar.
-  final bool secondaryButtonEnabled;
 
   /// ### Callbacks: el punto de extensión principal de la librería
   ///

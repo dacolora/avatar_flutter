@@ -181,9 +181,10 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
     }
   }
 
-  /// Maneja el toque del botón "Cancelar" (o del botón de volver del
-  /// header). Según las reglas de uso de la especificación, cancelar
-  /// descarta cualquier cambio hecho durante esta sesión: como el
+  /// Maneja el toque del botón de volver del header (única forma de
+  /// cancelar; el footer solo tiene el botón "Guardar"). Según las reglas de
+  /// uso de la especificación, cancelar descarta cualquier cambio hecho
+  /// durante esta sesión: como el
   /// controlador (y su selección en memoria) se destruye junto con esta
   /// pantalla en [dispose], no hace falta "revertir" nada manualmente —
   /// simplemente nunca se llega a llamar a
@@ -321,34 +322,19 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
             // como último elemento dentro del `body`) precisamente para que
             // quede siempre fijo en la parte inferior de la pantalla, fuera
             // del área que hace scroll, tal como lo pide la especificación
-            // (#9 Footer siempre visible).
+            // (#9 Footer siempre visible). Solo tiene el botón "Guardar" —
+            // cancelar se hace desde el botón de volver del header (ver
+            // [_handleCancel]).
             bottomNavigationBar: SafeArea(
               top: false,
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: controller.isSaving
-                            ? null
-                            : () => _handleSave(controller),
-                        child: Text(widget.config.saveButtonText),
-                      ),
-                    ),
-                    if (widget.config.secondaryButtonEnabled) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: _handleCancel,
-                          child: Text(widget.config.cancelButtonText),
-                        ),
-                      ),
-                    ],
-                  ],
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: controller.isSaving ? null : () => _handleSave(controller),
+                    child: Text(widget.config.saveButtonText),
+                  ),
                 ),
               ),
             ),

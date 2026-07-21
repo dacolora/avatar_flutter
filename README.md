@@ -195,8 +195,9 @@ arriba a abajo, la pantalla arma:
      abajo). Cada opción, de cualquiera de las dos secciones, se dibuja con
      **`AvatarSelectableThumbnail`**, la miniatura cuadrada compartida por
      ambos widgets.
-4. En `bottomNavigationBar` (fijo, fuera del área con scroll): los botones
-   "Guardar" y, si `config.secondaryButtonEnabled`, "Cancelar".
+4. En `bottomNavigationBar` (fijo, fuera del área con scroll): el botón
+   "Guardar". No hay un botón "Cancelar" en el footer — cancelar se hace
+   desde el botón de volver del header.
 
 Todo el contenido de arriba (1 a 3) vive dentro de un único
 `SingleChildScrollView`, sin ningún `Expanded` — una decisión deliberada para
@@ -243,9 +244,10 @@ responsabilidad del canal** decidir qué hacer con `resultado.imageBytes` y
 
 ### 6. Cancelar
 
-Al tocar "Cancelar" o el botón de volver del header (`_handleCancel`): se
-llama a `config.onCancel?.call()` y la pantalla simplemente se cierra sin
-devolver ningún resultado. Como el `AvatarCreatorController` de esa sesión se
+Al tocar el botón de volver del header (`_handleCancel`; no hay un botón
+"Cancelar" en el footer): se llama a `config.onCancel?.call()` y la pantalla
+simplemente se cierra sin devolver ningún resultado. Como el
+`AvatarCreatorController` de esa sesión se
 destruye junto con la pantalla (`dispose()`), cualquier selección hecha
 durante esa sesión se pierde — el canal nunca llega a enterarse de una
 elección que el usuario no confirmó.
