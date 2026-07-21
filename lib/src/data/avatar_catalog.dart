@@ -3,21 +3,34 @@ import 'package:flutter/material.dart';
 import '../models/avatar_layer_category.dart';
 import '../models/avatar_option.dart';
 
-/// Catálogo por defecto del widget: 4 categorías de capa (Face, Hair, Body,
-/// Extra) más "Color de fondo". El orden de esta lista es el orden de
-/// navegación de los tabs y no es libre (ver "Reglas de uso").
+/// Catálogo por defecto del widget: define **qué** categorías existen, en
+/// **qué orden**, y **qué opciones** tiene cada una.
 ///
-/// NOTA: por ahora solo existe un asset de muestra por categoría
-/// (`{categoria}_1.svg`). Mientras el equipo de diseño entrega el resto de
-/// variantes, cada categoría repite ese mismo asset en varios slots
-/// seleccionables para dejar completo el flujo de selección / preview en
-/// tiempo real / guardado. Agregar una variante real más adelante es un
-/// cambio de datos (sumar un `AvatarOption.layer(...)` apuntando al nuevo
-/// SVG), no de código.
+/// Esta función es, junto con [AvatarCreatorConfig], la otra mitad de la
+/// frontera librería/canal: aquí es donde vive el contenido que el equipo de
+/// diseño de Bancolombia definió como "el" catálogo oficial (4 categorías de
+/// capa — Vestuario, Cabello, Rostro, Accesorios — más "Color de fondo"). El
+/// canal normalmente **no** llama a esta función directamente ni la
+/// sobreescribe: [AvatarCreatorScreen] la usa automáticamente cuando el
+/// canal no provee [AvatarCreatorConfig.categories].
 ///
-/// El orden de esta lista define tanto el orden de los tabs de navegación
-/// como el orden de apilado (z-index) del preview: cada capa se dibuja
-/// encima de la anterior, de atrás (Vestuario) hacia adelante (Accesorios).
+/// El **orden** de la lista que devuelve importa por dos motivos a la vez:
+/// es el orden de los tabs de navegación que ve el usuario, y es también el
+/// orden de apilado (z-index) en el preview — cada capa se dibuja encima de
+/// la anterior, de más al fondo (Vestuario) a más al frente (Accesorios).
+///
+/// ### Nota sobre el estado actual de los assets
+/// Por ahora solo existe **un** asset de muestra por categoría
+/// (`{categoria}_1.svg`, entregado por el equipo de diseño). Mientras el
+/// resto de variantes reales no estén listas, cada categoría repite ese
+/// mismo asset en varios slots seleccionables (ver
+/// [_placeholderLayerCategory]) para que el flujo completo — elegir opción,
+/// ver el preview actualizarse, guardar — ya funcione de punta a punta con
+/// datos de verdad, aunque visualmente algunas opciones se vean idénticas
+/// entre sí. Agregar una variante real más adelante (por ejemplo,
+/// `hair_2.svg`) es **solo un cambio de datos**: se agrega un
+/// `AvatarOption.layer(...)` nuevo apuntando al SVG correspondiente, sin
+/// tocar ningún widget ni controlador.
 List<AvatarLayerCategory> defaultAvatarCatalog() {
   return [
     _placeholderLayerCategory(
@@ -44,6 +57,10 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
       icon: Icons.auto_awesome_outlined,
       assetPath: 'assets/avatar/extra/extra_1.svg',
     ),
+    // A diferencia de las categorías de capa de arriba, esta se construye
+    // directamente con el constructor normal de [AvatarLayerCategory] (no
+    // con [_placeholderLayerCategory]), porque sus opciones no son SVGs de
+    // muestra repetidos sino colores reales y definitivos.
     AvatarLayerCategory(
       id: 'background',
       label: 'Color de fondo',
@@ -60,8 +77,15 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
   ];
 }
 
-/// Genera [optionCount] opciones para una categoría de capa, todas apuntando
-/// al mismo asset de muestra (ver nota de [defaultAvatarCatalog]).
+/// Construye una categoría de tipo [AvatarCategoryKind.layer] con
+/// [optionCount] opciones, todas apuntando al mismo [assetPath] de muestra
+/// (ver la nota sobre el estado de los assets en [defaultAvatarCatalog]).
+///
+/// `List.generate(optionCount, (index) => ...)` es la forma idiomática en
+/// Dart de crear una lista de tamaño fijo aplicando la misma lógica a cada
+/// posición: aquí, para cada índice de `0` a `optionCount - 1`, se crea una
+/// [AvatarOption.layer] con un id distinto (`'$id-${index + 1}'`, por
+/// ejemplo `'hair-1'`, `'hair-2'`, ...) pero el mismo `assetPath`.
 AvatarLayerCategory _placeholderLayerCategory({
   required String id,
   required String label,

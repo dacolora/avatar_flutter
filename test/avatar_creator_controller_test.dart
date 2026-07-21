@@ -29,9 +29,10 @@ AvatarLayerCategory _layerCategory(String id, List<String> optionIds) {
 }
 
 void main() {
-  // `GlobalKey.currentContext` (used by `save()` to find the preview's
-  // `RepaintBoundary`) reads `WidgetsBinding.instance`, so it needs a
-  // binding even for the plain-Dart tests below that never pump a widget.
+  // `GlobalKey.currentContext` (usado por `save()` para encontrar el
+  // `RepaintBoundary` del preview) internamente lee `WidgetsBinding.instance`,
+  // así que se necesita inicializar el binding incluso en los tests de más
+  // abajo que nunca "pintan" un widget de verdad (`tester.pumpWidget`).
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AvatarCreatorController', () {
