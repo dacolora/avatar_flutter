@@ -41,11 +41,23 @@ dentro de `lib/src/` es detalle interno y no debería importarse directamente.
 
 ## Uso básico
 
+`avatar_flutter` **no depende de `provider` ni de ningún otro paquete de
+gestión de estado externo** — internamente usa únicamente `ChangeNotifier` e
+`InheritedNotifier`, ambos parte del propio SDK de Flutter. Esto es
+intencional: algunos canales no pueden asumir la dependencia de `provider`
+(por conflicto de versiones, por arquitectura propia, etc.), así que el
+paquete resuelve la compartición de estado sin necesitar nada externo. Ver la
+sección de [arquitectura interna](#arquitectura-interna-sin-provider) más
+abajo si te interesa el detalle.
+
 ```dart
 final resultado = await AvatarCreatorScreen.push(
   context,
   config: AvatarCreatorConfig(
-    initialSelection: seleccionGuardadaDelUsuario, // null = avatar nuevo
+    // initialSelection es un Future<Map<String, String>>?, pensado para leer
+    // de SharedPreferences (que es async) sin bloquear la construcción de
+    // la config. Si se deja en null, es un avatar nuevo.
+    initialSelection: leerSeleccionGuardada(),
     onSave: () => analytics.track(AvatarAnalyticsEvents.avatarSave),
     onSaveSuccess: (r) => analytics.track(AvatarAnalyticsEvents.avatarSaveSuccess),
     onSaveError: (e) => analytics.track(AvatarAnalyticsEvents.avatarSaveError),
@@ -54,17 +66,38 @@ final resultado = await AvatarCreatorScreen.push(
 
 if (resultado is AvatarCreatorResult) {
   // El widget solo generó la imagen (resultado.imageBytes) y la selección
-  // (resultado.selection). Subirla, guardarla y asociarla al perfil es
-  // responsabilidad de ESTE código, del canal — ver la sección siguiente.
+  // (resultado.selection, un Map<String, String> plano). Subirla, guardarla
+  // y asociarla al perfil es responsabilidad de ESTE código, del canal — ver
+  // la sección siguiente.
   await miServicioDePerfil.actualizarAvatar(resultado.imageBytes);
-  guardarSeleccionLocalmente(resultado.selection);
+  await guardarSeleccionEnSharedPreferences(resultado.selection);
 }
 ```
 
-Puedes ver un ejemplo funcional completo en `example/lib/main.dart`: una
-pantalla de perfil que ofrece "Cámara / Galería / Avatar / Cerrar" y, al
-elegir "Avatar", abre `AvatarCreatorScreen` y usa el resultado para actualizar
-el `CircleAvatar` de la pantalla.
+Un patrón típico para `leerSeleccionGuardada()`/`guardarSeleccionEnSharedPreferences(...)`
+usando `shared_preferences` (el mapa se codifica/decodifica con
+`jsonEncode`/`jsonDecode` porque `SharedPreferences` solo guarda tipos
+simples, no mapas):
+
+```dart
+Future<Map<String, String>> leerSeleccionGuardada() async {
+  final prefs = await SharedPreferences.getInstance();
+  final json = prefs.getString('avatar_selection');
+  if (json == null) return {};
+  return Map<String, String>.from(jsonDecode(json) as Map);
+}
+
+Future<void> guardarSeleccionEnSharedPreferences(Map<String, String> selection) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('avatar_selection', jsonEncode(selection));
+}
+```
+
+Puedes ver un ejemplo funcional completo (con esta misma integración de
+`shared_preferences` ya cableada) en `example/lib/main.dart`: una pantalla de
+perfil que ofrece "Cámara / Galería / Avatar / Cerrar" y, al elegir "Avatar",
+abre `AvatarCreatorScreen` y usa el resultado para actualizar el
+`CircleAvatar` de la pantalla y persistir la selección.
 
 ## ¿Qué es responsabilidad de la librería y qué es responsabilidad del canal?
 
@@ -115,26 +148,33 @@ Flutter (`Navigator.push`) con `AvatarCreatorScreen` dentro, pasándole la
 `AvatarCreatorConfig` que el canal haya armado (o ninguna, si le sirven todos
 los valores por defecto).
 
-### 2. Se crea el estado de la sesión de edición
+### 2. Se espera la selección inicial (si viene de un `Future`) y se crea el controlador
 
-En `initState()` de `_AvatarCreatorScreenState`, se crea un
+Si `config.initialSelection` es `null` (avatar nuevo), `initState()` crea el
 `AvatarCreatorController` (`lib/src/controllers/avatar_creator_controller.dart`)
-nuevo, pasándole:
+de inmediato, sin ningún estado de carga. Si en cambio trae un
+`Future<Map<String, String>>` (por ejemplo, la lectura de `SharedPreferences`
+del canal), la pantalla lo espera primero — mostrando un
+`CircularProgressIndicator` mientras tanto — y solo entonces crea el
+controlador, pasándole:
 
 * El catálogo de categorías: el que traiga `config.categories`, o si es
   `null`, `defaultAvatarCatalog()` (`lib/src/data/avatar_catalog.dart`) — el
   catálogo oficial de la librería.
-* La selección inicial: la que traiga `config.initialSelection` (modo
-  "editar"), o si es `null`, el controlador arma una selección "de fábrica"
-  con la primera opción de cada categoría (modo "avatar nuevo").
+* La selección inicial: el mapa resuelto por el `Future` (modo "editar"), o
+  si no había `Future`, el controlador arma una selección "de fábrica" con la
+  primera opción de cada categoría (modo "avatar nuevo").
 
-Justo después de que la pantalla termina de pintar su primer frame, se llama
-a `config.onView?.call()` — el primer punto donde el canal se entera de algo.
+Justo después de que la pantalla termina de pintar el primer frame con el
+controlador ya listo, se llama a `config.onView?.call()` — el primer punto
+donde el canal se entera de algo.
 
 ### 3. Se pinta la pantalla, conectada al controlador
 
-`build()` envuelve todo con un `ChangeNotifierProvider` que expone el
-controlador a los widgets hijos. De arriba a abajo, la pantalla arma:
+`build()` envuelve todo con un `AvatarCreatorScope` (un `InheritedNotifier`
+propio del paquete — ver la sección de [arquitectura interna](#arquitectura-interna-sin-provider))
+que expone el controlador a los widgets hijos, sin depender de `provider`. De
+arriba a abajo, la pantalla arma:
 
 1. **`AvatarPreview`** (`lib/src/widgets/avatar_preview.dart`): un cuadrado
    con el color de fondo elegido (`controller.backgroundColor`) y, encima,
@@ -165,10 +205,10 @@ a 0px cuando la barra de direcciones del navegador cambia de tamaño.
   opciones de la nueva categoría, pero la selección de las demás categorías
   no se pierde (queda guardada en `controller.selection`).
 * **Tocar una opción** llama a `controller.selectOption(categoryId, optionId)`:
-  actualiza `controller.selection` (un `AvatarSelection` inmutable — cada
-  cambio crea una instancia nueva en vez de mutar la anterior) y notifica —
-  `AvatarPreview` se redibuja al instante con la nueva capa o el nuevo color
-  de fondo.
+  actualiza la selección interna del controlador (representada como un mapa
+  inmutable — cada cambio crea una copia nueva en vez de mutar la anterior) y
+  notifica — `AvatarPreview` se redibuja al instante con la nueva capa o el
+  nuevo color de fondo.
 
 Ningún cambio se persiste ni se envía a ningún lado en este punto: todo vive
 en memoria, dentro del `AvatarCreatorController` de esa sesión de edición.
@@ -204,6 +244,31 @@ devolver ningún resultado. Como el `AvatarCreatorController` de esa sesión se
 destruye junto con la pantalla (`dispose()`), cualquier selección hecha
 durante esa sesión se pierde — el canal nunca llega a enterarse de una
 elección que el usuario no confirmó.
+
+## Arquitectura interna: sin `provider`
+
+Antes de compartirlo, el estado del creador de avatar (categoría activa,
+selección, si está guardando, errores) se manejaba con
+`ChangeNotifierProvider` + `Consumer`/`context.watch` del paquete `provider`.
+Como algunos canales no pueden depender de `provider`, se reemplazó por dos
+piezas que **ya vienen incluidas en el SDK de Flutter**, sin ninguna
+dependencia nueva:
+
+* **`AvatarCreatorController`** sigue siendo un `ChangeNotifier` normal
+  (`package:flutter/foundation.dart`) — eso no cambió, `ChangeNotifier` nunca
+  fue parte de `provider`, es del propio Flutter.
+* **`AvatarCreatorScope`** (`lib/src/controllers/avatar_creator_scope.dart`)
+  es un `InheritedNotifier<AvatarCreatorController>` — también parte del SDK
+  de Flutter (`package:flutter/widgets.dart`) — que cumple exactamente el
+  mismo rol que `ChangeNotifierProvider`: expone el controlador a los
+  widgets descendientes y los reconstruye automáticamente cada vez que el
+  controlador llama a `notifyListeners()`.
+
+Un widget interno accede al controlador con `AvatarCreatorScope.of(context)`
+en vez de `context.watch<AvatarCreatorController>()`. Fuera de ese cambio de
+sintaxis, el comportamiento es idéntico: es un reemplazo interno, transparente
+para el canal — `AvatarCreatorScope` ni siquiera se exporta desde
+`avatar_flutter.dart`, porque el canal nunca necesita tocarlo directamente.
 
 ## Estado de los assets
 

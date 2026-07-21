@@ -3,6 +3,18 @@ import 'package:equatable/equatable.dart';
 /// Foto instantánea (snapshot) e **inmutable** de la selección actual del
 /// usuario: qué opción está elegida en cada categoría.
 ///
+/// Esta clase es un **detalle interno** de [AvatarCreatorController] — no se
+/// exporta desde `avatar_flutter.dart` ni forma parte de la API pública del
+/// paquete. En la frontera con el canal (es decir, en
+/// [AvatarCreatorConfig.initialSelection] y en
+/// [AvatarCreatorResult.selection]) se usa directamente un
+/// `Map<String, String>` plano, porque es un tipo estándar de Dart,
+/// directamente serializable a JSON para guardarlo en `SharedPreferences` u
+/// otro almacenamiento, sin que el canal necesite conocer este tipo. Puertas
+/// adentro del controlador, en cambio, sí conviene envolver ese mapa en una
+/// clase inmutable y comparable como esta, para aprovechar copy-with
+/// ([withOption]) e igualdad por contenido ([Equatable]).
+///
 /// Internamente es solo un mapa `categoryId -> optionId` (por ejemplo,
 /// `{'face': 'face-3', 'hair': 'hair-1', 'background': 'green'}`). Nota que
 /// la categoría de color de fondo se guarda igual que cualquier otra: para

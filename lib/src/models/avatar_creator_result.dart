@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'avatar_selection.dart';
-
 /// Resultado que la librería entrega al canal cuando el usuario guarda el
 /// avatar (ver [AvatarCreatorController.save] y
 /// [AvatarCreatorConfig.onSaveSuccess]).
@@ -22,11 +20,23 @@ class AvatarCreatorResult {
     required this.imageBytes,
   });
 
-  /// La selección final (`categoryId -> optionId`) con la que el usuario
-  /// guardó el avatar. Útil si el canal quiere, por ejemplo, reabrir el
-  /// creador más adelante con esta misma selección como punto de partida
-  /// (ver [AvatarCreatorConfig.initialSelection]).
-  final AvatarSelection selection;
+  /// La selección final con la que el usuario guardó el avatar, como un
+  /// mapa `categoryId -> optionId` (por ejemplo,
+  /// `{'face': 'face-3', 'hair': 'hair-1', 'background': 'green'}`).
+  ///
+  /// Se expone como un `Map<String, String>` en lugar de un tipo propio de
+  /// esta librería a propósito: un mapa de `String` a `String` es
+  /// directamente serializable con `jsonEncode(...)` de `dart:convert`, así
+  /// que el canal puede guardarlo tal cual en `SharedPreferences` (u otro
+  /// almacenamiento) sin ninguna conversión intermedia:
+  /// ```dart
+  /// final prefs = await SharedPreferences.getInstance();
+  /// await prefs.setString('avatar_selection', jsonEncode(result.selection));
+  /// ```
+  /// Ese mismo mapa, ya decodificado con `jsonDecode(...)`, es exactamente
+  /// lo que espera [AvatarCreatorConfig.initialSelection] la próxima vez que
+  /// se abra el creador para seguir editando ese avatar.
+  final Map<String, String> selection;
 
   /// Los bytes de una imagen PNG con el preview compuesto (todas las capas
   /// ilustradas apiladas sobre el color de fondo elegido), capturados desde

@@ -58,7 +58,7 @@ void main() {
     test('respects an initial selection provided by the channel', () {
       final controller = AvatarCreatorController(
         categories: categories,
-        initialSelection: const AvatarSelection({'body': 'body-2', 'face': 'face-1', 'background': 'blue'}),
+        initialSelection: const {'body': 'body-2', 'face': 'face-1', 'background': 'blue'},
       );
 
       expect(controller.selectedOptionFor('body').id, 'body-2');

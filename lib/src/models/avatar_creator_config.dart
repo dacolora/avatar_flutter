@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 
 import 'avatar_creator_result.dart';
 import 'avatar_layer_category.dart';
-import 'avatar_selection.dart';
 
 /// Conjunto de ajustes que el canal (la app que embebe este widget) puede
 /// personalizar al mostrar el creador de avatar.
@@ -26,8 +25,7 @@ import 'avatar_selection.dart';
 ///   El widget preselecciona la primera opción de cada categoría.
 /// * **Editar avatar existente**: el canal ya sabe qué había elegido el
 ///   usuario la última vez (porque el propio canal lo guardó, ver
-///   [AvatarCreatorResult]) y lo pasa en [initialSelection] para que el
-///   widget abra mostrando esa selección en vez de la de por defecto.
+///   [AvatarCreatorResult]) y se lo entrega al widget en [initialSelection].
 @immutable
 class AvatarCreatorConfig {
   const AvatarCreatorConfig({
@@ -55,12 +53,41 @@ class AvatarCreatorConfig {
   /// de diseño ya validada, no a una preferencia libre de cada canal.
   final List<AvatarLayerCategory>? categories;
 
-  /// Selección con la que debe abrir el widget. Pásala cuando el usuario ya
-  /// tenía un avatar configurado y quieres que el creador abra mostrando esa
-  /// misma elección (caso "editar"). Si es `null` (caso "avatar nuevo"), el
-  /// widget preselecciona automáticamente la primera opción de cada
-  /// categoría.
-  final AvatarSelection? initialSelection;
+  /// Selección con la que debe abrir el widget, expresada como un
+  /// `Future` que resuelve a un mapa `categoryId -> optionId` (por ejemplo,
+  /// `{'face': 'face-3', 'hair': 'hair-1', 'background': 'green'}`).
+  ///
+  /// ### ¿Por qué un `Future` y no un mapa directo?
+  /// Leer una selección guardada previamente casi siempre implica una
+  /// operación asíncrona por parte del canal — típicamente, leer un valor de
+  /// `SharedPreferences` (`SharedPreferences.getInstance()` ya es async por
+  /// sí mismo) o de una base de datos local. En vez de forzar al canal a
+  /// resolver esa lectura *antes* de poder construir la
+  /// [AvatarCreatorConfig], el widget acepta directamente el `Future` en
+  /// curso y se encarga de esperarlo (mostrando un estado de carga mientras
+  /// tanto) antes de mostrar la pantalla completa.
+  ///
+  /// Ejemplo típico usando `shared_preferences`:
+  /// ```dart
+  /// Future<Map<String, String>> _leerSeleccionGuardada() async {
+  ///   final prefs = await SharedPreferences.getInstance();
+  ///   final json = prefs.getString('avatar_selection');
+  ///   if (json == null) return {};
+  ///   return Map<String, String>.from(jsonDecode(json) as Map);
+  /// }
+  ///
+  /// AvatarCreatorConfig(initialSelection: _leerSeleccionGuardada());
+  /// ```
+  ///
+  /// Si se deja en `null` (caso "avatar nuevo"), el widget preselecciona
+  /// automáticamente la primera opción de cada categoría, sin esperar nada.
+  ///
+  /// El mapa que resuelve este `Future` tiene exactamente la misma forma que
+  /// [AvatarCreatorResult.selection]: es "el mismo array" yendo en sentido
+  /// contrario, listo para guardarse tal cual (por ejemplo, codificado a
+  /// JSON con `jsonEncode(...)`) en `SharedPreferences` o cualquier otro
+  /// almacenamiento que use el canal.
+  final Future<Map<String, String>>? initialSelection;
 
   /// Título mostrado en la barra superior (`AppBar`) de la pantalla.
   final String title;
@@ -114,12 +141,14 @@ class AvatarCreatorConfig {
   /// Se llama cuando el guardado terminó con éxito, con el
   /// [AvatarCreatorResult] resultante (selección final + imagen generada).
   /// Este es el momento en el que, típicamente, el canal tomaría
-  /// `result.imageBytes` y la subiría o persistiría según su propia lógica.
+  /// `result.imageBytes` y `result.selection` y las persistiría según su
+  /// propia lógica (ver la documentación de [AvatarCreatorResult.selection]).
   final ValueChanged<AvatarCreatorResult>? onSaveSuccess;
 
   /// Se llama cuando ocurre un error durante el guardado (por ejemplo, si no
-  /// fue posible capturar la imagen del preview). Recibe el error tal cual
-  /// fue lanzado internamente.
+  /// fue posible capturar la imagen del preview, o si el `Future` de
+  /// [initialSelection] terminó en error). Recibe el error tal cual fue
+  /// lanzado internamente.
   final ValueChanged<Object>? onSaveError;
 
   /// Se llama cuando el usuario cancela o cierra la pantalla sin guardar.

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 
-import '../controllers/avatar_creator_controller.dart';
+import '../controllers/avatar_creator_scope.dart';
 
 /// El "lienzo" del avatar: combina el color de fondo (#2 Background) con las
 /// capas ilustradas seleccionadas (#3 Preview), apiladas una encima de otra,
@@ -17,13 +16,12 @@ class AvatarPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // `context.watch<T>()` es la forma corta de suscribirse a un
-    // `ChangeNotifier` provisto más arriba en el árbol (aquí, el
-    // `AvatarCreatorController` que `AvatarCreatorScreen` registró con
-    // `ChangeNotifierProvider`). Cada vez que el controlador llama a
+    // `AvatarCreatorScope.of(context)` suscribe a este widget al
+    // `AvatarCreatorController` expuesto más arriba en el árbol por
+    // `AvatarCreatorScreen`. Cada vez que el controlador llama a
     // `notifyListeners()` — por ejemplo, al seleccionar una opción nueva —
     // este widget completo se reconstruye con los valores más recientes.
-    final controller = context.watch<AvatarCreatorController>();
+    final controller = AvatarCreatorScope.of(context);
 
     return AnimatedContainer(
       // `AnimatedContainer` funciona como un `Container` normal, pero cuando

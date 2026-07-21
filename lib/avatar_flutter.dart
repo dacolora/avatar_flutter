@@ -21,4 +21,3 @@ export 'src/models/avatar_creator_config.dart';
 export 'src/models/avatar_creator_result.dart';
 export 'src/models/avatar_layer_category.dart';
 export 'src/models/avatar_option.dart';
-export 'src/models/avatar_selection.dart';

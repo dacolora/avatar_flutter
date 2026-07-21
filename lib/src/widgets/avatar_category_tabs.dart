@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../controllers/avatar_creator_controller.dart';
+import '../controllers/avatar_creator_scope.dart';
 
 /// Fila horizontal de tabs de categoría (#4 Categorías + #5 Card container
 /// de la especificación): un botón circular con icono por cada categoría
@@ -9,10 +8,10 @@ import '../controllers/avatar_creator_controller.dart';
 ///
 /// Es un `StatelessWidget` — es decir, no guarda ningún estado propio —
 /// porque toda la información que necesita (cuáles son las categorías, cuál
-/// está activa) la lee en tiempo real desde el [AvatarCreatorController] con
-/// `context.watch<...>()`. Cuando el usuario toca un tab y el controlador
-/// llama a `notifyListeners()`, este widget se reconstruye automáticamente
-/// con el nuevo tab marcado como activo.
+/// está activa) la lee en tiempo real desde el `AvatarCreatorController` con
+/// `AvatarCreatorScope.of(context)`. Cuando el usuario toca un tab y el
+/// controlador llama a `notifyListeners()`, este widget se reconstruye
+/// automáticamente con el nuevo tab marcado como activo.
 class AvatarCategoryTabs extends StatelessWidget {
   const AvatarCategoryTabs({super.key});
 
@@ -20,7 +19,7 @@ class AvatarCategoryTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<AvatarCreatorController>();
+    final controller = AvatarCreatorScope.of(context);
 
     return Container(
       decoration: const BoxDecoration(

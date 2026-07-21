@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:provider/provider.dart';
 
 import 'controllers/avatar_creator_controller.dart';
+import 'controllers/avatar_creator_scope.dart';
 import 'data/avatar_catalog.dart';
 import 'models/avatar_creator_config.dart';
 import 'models/avatar_layer_category.dart';
@@ -18,8 +18,9 @@ import 'widgets/avatar_section_label.dart';
 /// Si vas a usar `avatar_flutter` desde un canal, esta es prácticamente la
 /// única clase con la que necesitas interactuar directamente: le pasas una
 /// [AvatarCreatorConfig] (opcional) y ella se encarga de todo lo demás
-/// (armar el controlador, mostrar el header, el preview, los tabs de
-/// categorías, las opciones y el pie con los botones de guardar/cancelar).
+/// (esperar la selección inicial si viene de un `Future`, armar el
+/// controlador, mostrar el header, el preview, los tabs de categorías, las
+/// opciones y el pie con los botones de guardar/cancelar).
 ///
 /// Internamente compone, de arriba a abajo, las piezas numeradas en la
 /// especificación de diseño "WID - Avatar - APP": header (#1), fondo +
@@ -51,7 +52,7 @@ class AvatarCreatorScreen extends StatefulWidget {
   /// ```dart
   /// final resultado = await AvatarCreatorScreen.push(context, config: miConfig);
   /// if (resultado is AvatarCreatorResult) {
-  ///   // el canal decide qué hacer con resultado.imageBytes
+  ///   // el canal decide qué hacer con resultado.imageBytes y resultado.selection
   /// }
   /// ```
   static Future<Object?> push(
@@ -73,46 +74,96 @@ class AvatarCreatorScreen extends StatefulWidget {
 /// controlador que se crea una sola vez y sobrevive a reconstrucciones — vive
 /// en su clase `State` asociada, que es esta.
 class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
-  /// El controlador de esta sesión de edición. Se crea una única vez en
-  /// [initState] (no en [build], que puede ejecutarse muchas veces) para que
-  /// conserve la selección del usuario mientras la pantalla siga montada,
-  /// sin recrearse en cada reconstrucción del widget.
-  late final AvatarCreatorController _controller;
+  /// El controlador de esta sesión de edición. Empieza en `null` porque, si
+  /// [AvatarCreatorConfig.initialSelection] trae un `Future`, hay que
+  /// esperarlo antes de poder construir el controlador (necesita saber la
+  /// selección inicial desde el momento en que se crea). Mientras sea
+  /// `null`, [build] muestra un estado de carga en vez de la pantalla
+  /// completa.
+  AvatarCreatorController? _controller;
+
+  /// Error ocurrido al esperar [AvatarCreatorConfig.initialSelection], si lo
+  /// hubo. Mientras no sea `null` y [_controller] siga sin construirse, la
+  /// pantalla muestra un estado de error en vez de quedarse cargando para
+  /// siempre.
+  Object? _loadError;
 
   @override
   void initState() {
     super.initState();
-    _controller = AvatarCreatorController(
+    final future = widget.config.initialSelection;
+    if (future == null) {
+      // Caso "avatar nuevo": no hay nada que esperar. Aquí se asigna
+      // `_controller` directamente como campo (**sin** llamar a
+      // `setState`), porque estamos dentro de `initState`, antes de que
+      // `build` se ejecute por primera vez — Flutter ya va a leer este
+      // valor en el primer `build`, así que llamar a `setState` aquí sería
+      // redundante y, peor, puede disparar el error "setState() called
+      // during build" si el framework todavía está construyendo este mismo
+      // widget en ese instante.
+      _controller = _buildController(null);
+      _scheduleOnView();
+    } else {
+      _awaitInitialSelection(future);
+    }
+  }
+
+  AvatarCreatorController _buildController(Map<String, String>? initialSelection) {
+    return AvatarCreatorController(
       categories: widget.config.categories ?? defaultAvatarCatalog(),
-      initialSelection: widget.config.initialSelection,
+      initialSelection: initialSelection,
     );
-    // `addPostFrameCallback` programa el callback para que se ejecute justo
-    // después de que Flutter termine de pintar el primer frame de esta
-    // pantalla. Se usa aquí (en vez de llamar a `onView` directamente) para
-    // no invocar un callback del canal en mitad de la construcción del
-    // árbol de widgets, y para garantizar que, cuando se dispare, el usuario
-    // ya está viendo la pantalla completa.
+  }
+
+  /// Programa `config.onView` para ejecutarse justo después de que Flutter
+  /// termine de pintar el primer frame con el controlador ya listo. Se hace
+  /// así (en vez de llamar al callback directamente) para no invocarlo en
+  /// mitad de la construcción del árbol de widgets, y para garantizar que,
+  /// cuando se dispare, el usuario ya está viendo la pantalla completa.
+  void _scheduleOnView() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       widget.config.onView?.call();
     });
   }
 
+  /// Espera el `Future` de [AvatarCreatorConfig.initialSelection] y, con ese
+  /// resultado, crea el [AvatarCreatorController] de la sesión.
+  ///
+  /// A diferencia del caso sin `Future` (manejado directamente en
+  /// [initState]), aquí sí es seguro llamar a `setState`: un `await`, incluso
+  /// sobre un `Future` que ya estaba resuelto, siempre reanuda su código en
+  /// una tarea posterior (un "microtask"), nunca en la misma pila de
+  /// llamadas síncrona que disparó `initState`/`build`. Por eso, para
+  /// cuando este código se ejecuta, el framework ya terminó de construir el
+  /// primer frame y `setState` es completamente seguro de llamar.
+  Future<void> _awaitInitialSelection(Future<Map<String, String>> future) async {
+    try {
+      final initialSelection = await future;
+      if (!mounted) return;
+      setState(() => _controller = _buildController(initialSelection));
+      _scheduleOnView();
+    } catch (error) {
+      widget.config.onSaveError?.call(error);
+      if (mounted) setState(() => _loadError = error);
+    }
+  }
+
   @override
   void dispose() {
     // Todo `ChangeNotifier` que creas manualmente (con `AvatarCreatorController(...)`,
-    // no a través de un `ChangeNotifierProvider` que lo cree por ti) debe
-    // liberarse explícitamente con `dispose()` cuando ya no se necesita, para
-    // que Flutter pueda limpiar sus listeners internos y evitar fugas de
+    // no a través de un widget que lo cree por ti) debe liberarse
+    // explícitamente con `dispose()` cuando ya no se necesita, para que
+    // Flutter pueda limpiar sus listeners internos y evitar fugas de
     // memoria.
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   /// Maneja el toque del botón "Guardar" del pie de pantalla.
-  Future<void> _handleSave() async {
+  Future<void> _handleSave(AvatarCreatorController controller) async {
     widget.config.onSave?.call();
     try {
-      final result = await _controller.save();
+      final result = await controller.save();
       widget.config.onSaveSuccess?.call(result);
       // `mounted` es `true` mientras este `State` sigue formando parte del
       // árbol de widgets. Como `save()` es asíncrono, es posible que el
@@ -133,9 +184,9 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
   /// Maneja el toque del botón "Cancelar" (o del botón de volver del
   /// header). Según las reglas de uso de la especificación, cancelar
   /// descarta cualquier cambio hecho durante esta sesión: como el
-  /// controlador (y su [AvatarCreatorController.selection] en memoria) se
-  /// destruye junto con esta pantalla en [dispose], no hace falta "revertir"
-  /// nada manualmente — simplemente nunca se llega a llamar a
+  /// controlador (y su selección en memoria) se destruye junto con esta
+  /// pantalla en [dispose], no hace falta "revertir" nada manualmente —
+  /// simplemente nunca se llega a llamar a
   /// [AvatarCreatorConfig.onSaveSuccess], así que el canal nunca se entera
   /// de una selección que el usuario no confirmó.
   void _handleCancel() {
@@ -145,23 +196,43 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // `ChangeNotifierProvider.value` inserta `_controller` en el árbol de
-    // widgets para que cualquier descendiente pueda leerlo con
-    // `context.watch<AvatarCreatorController>()` sin que se lo tengamos que
-    // pasar manualmente widget por widget (esto es "inyección de
-    // dependencias" vía el árbol de widgets, la forma habitual de compartir
-    // estado en Flutter con el paquete `provider`). Se usa `.value` (en vez
-    // de `ChangeNotifierProvider(create: ...)`) porque `_controller` ya fue
-    // creado en `initState`, no queremos que el provider cree uno nuevo.
-    return ChangeNotifierProvider<AvatarCreatorController>.value(
-      value: _controller,
-      // `Consumer` reconstruye únicamente el contenido de su `builder` cada
-      // vez que el controlador llama a `notifyListeners()`. Es la forma
-      // explícita (alternativa a `context.watch` dentro de un widget más
-      // pequeño) de decirle a Flutter "esta parte del árbol depende del
-      // controlador".
-      child: Consumer<AvatarCreatorController>(
-        builder: (context, controller, _) {
+    final controller = _controller;
+
+    // Mientras se espera el `Future<Map<String, String>>?` de
+    // `initialSelection` (por ejemplo, mientras el canal lee
+    // `SharedPreferences`), todavía no hay controlador: se muestra un
+    // indicador de carga (o el error, si la lectura falló) en vez de la
+    // pantalla completa.
+    if (controller == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.config.title)),
+        body: Center(
+          child: _loadError != null
+              ? const Text('No fue posible cargar la selección guardada')
+              : const CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // `AvatarCreatorScope` reemplaza a `ChangeNotifierProvider` (del paquete
+    // `provider`): expone `controller` a los descendientes sin depender de
+    // ningún paquete externo (ver el comentario de esa clase). El `Builder`
+    // de adentro es necesario para obtener un `BuildContext` que esté
+    // *debajo* del `AvatarCreatorScope` — si se usara directamente el
+    // `context` de este método `build`, `AvatarCreatorScope.of(context)`
+    // buscaría hacia arriba y no encontraría este mismo scope, ya que
+    // todavía no ha terminado de insertarse en el árbol.
+    return AvatarCreatorScope(
+      controller: controller,
+      child: Builder(
+        builder: (context) {
+          // Llamar aquí a `AvatarCreatorScope.of(context)` (en vez de usar
+          // directamente la variable `controller` de más arriba) es lo que
+          // hace que este `Builder` se reconstruya automáticamente cada vez
+          // que el controlador notifique un cambio — exactamente el mismo
+          // efecto que tenía antes `context.watch<AvatarCreatorController>()`
+          // con `provider`.
+          final controller = AvatarCreatorScope.of(context);
           final activeCategory = controller.activeCategory;
           final selectedOptionId =
               controller.selection.selectedOptionFor(activeCategory.id);
@@ -232,7 +303,9 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: controller.isSaving ? null : _handleSave,
+                        onPressed: controller.isSaving
+                            ? null
+                            : () => _handleSave(controller),
                         child: Text(widget.config.saveButtonText),
                       ),
                     ),

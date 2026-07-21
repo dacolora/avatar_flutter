@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Punto de entrada de la app de ejemplo. `runApp` es la función de Flutter
 /// que toma un widget raíz y lo pinta en pantalla; todo lo demás en este
@@ -13,8 +15,10 @@ void main() => runApp(const AvatarFlutterExampleApp());
 /// en `example/`, una convención de los paquetes de Flutter para tener una
 /// app real de demostración); su único propósito es mostrar, con un caso
 /// concreto, cómo una app anfitriona integraría el widget: dónde se guarda la
-/// selección entre sesiones, cómo se usa la imagen resultante, y cómo se
-/// ofrece la entrada al creador de avatar desde una pantalla de perfil.
+/// selección entre sesiones (aquí, con `shared_preferences`, el paquete
+/// estándar de Flutter para persistir datos simples clave-valor en el
+/// dispositivo), cómo se usa la imagen resultante, y cómo se ofrece la
+/// entrada al creador de avatar desde una pantalla de perfil.
 class AvatarFlutterExampleApp extends StatelessWidget {
   const AvatarFlutterExampleApp({super.key});
 
@@ -51,11 +55,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// se subiría a un servidor o se guardaría en disco).
   Uint8List? _avatarImageBytes;
 
-  /// La última selección conocida (`categoryId -> optionId`), para poder
-  /// reabrir el creador con [AvatarCreatorConfig.initialSelection] y que el
-  /// usuario continúe editando desde donde lo dejó, en vez de reiniciar desde
-  /// la selección por defecto cada vez.
-  AvatarSelection? _lastSelection;
+  /// Llave bajo la que se guarda la selección del avatar en
+  /// `SharedPreferences`. `SharedPreferences` solo almacena tipos simples
+  /// (`String`, `int`, `bool`, `double`, `List<String>`), no mapas, así que
+  /// la selección (`Map<String, String>`) se guarda codificada como una
+  /// cadena JSON con `jsonEncode`/`jsonDecode` de `dart:convert`.
+  static const _selectionPrefsKey = 'avatar_selection';
+
+  /// Lee la selección guardada la última vez, si existe. Se le pasa
+  /// directamente a [AvatarCreatorConfig.initialSelection], que acepta un
+  /// `Future<Map<String, String>>` precisamente para casos como este: leer
+  /// de `SharedPreferences` es una operación asíncrona
+  /// (`SharedPreferences.getInstance()` devuelve un `Future`), así que la
+  /// librería no puede pedir el mapa ya resuelto de forma síncrona.
+  Future<Map<String, String>> _loadSavedSelection() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_selectionPrefsKey);
+    if (json == null) return {};
+    return Map<String, String>.from(jsonDecode(json) as Map);
+  }
+
+  /// Guarda la selección final (`result.selection`) para poder reabrir el
+  /// creador la próxima vez con [_loadSavedSelection] mostrando lo mismo que
+  /// el usuario había elegido.
+  Future<void> _saveSelection(Map<String, String> selection) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_selectionPrefsKey, jsonEncode(selection));
+  }
 
   /// Abre la pantalla del creador de avatar y reacciona a su resultado.
   ///
@@ -63,12 +89,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// responsabilidades: [AvatarCreatorScreen.push] (la librería) se encarga
   /// de toda la experiencia de selección y de generar la imagen; en cuanto
   /// esa función retorna, **todo lo que sigue es código del canal** —
-  /// decidir qué hacer con `result.imageBytes` y `result.selection`.
+  /// decidir qué hacer con `result.imageBytes` y `result.selection`, en este
+  /// caso guardándolos con `shared_preferences`.
   Future<void> _openAvatarCreator() async {
     final result = await AvatarCreatorScreen.push(
       context,
       config: AvatarCreatorConfig(
-        initialSelection: _lastSelection,
+        initialSelection: _loadSavedSelection(),
         // Hooks de tagueo sugeridos: el canal decide si/cómo los envía.
         onView: () =>
             debugPrint('tag: ${AvatarAnalyticsEvents.avatarCreatorView}'),
@@ -80,13 +107,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    // El widget solo genera la imagen; sincronizarla con el perfil es
+    // El widget solo genera la imagen y la selección; sincronizarlas es
     // responsabilidad del canal (ver "Reglas de uso").
-    if (result is AvatarCreatorResult && mounted) {
-      setState(() {
-        _avatarImageBytes = result.imageBytes;
-        _lastSelection = result.selection;
-      });
+    if (result is AvatarCreatorResult) {
+      if (mounted) setState(() => _avatarImageBytes = result.imageBytes);
+      await _saveSelection(result.selection);
     }
   }
 

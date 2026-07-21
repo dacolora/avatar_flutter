@@ -24,11 +24,12 @@ import '../models/avatar_selection.dart';
 ///    heredado de [ChangeNotifier] que avisa "algo cambió" a quien esté
 ///    escuchando.
 /// 3. En la UI, [AvatarCreatorScreen] envuelve esta clase con un
-///    `ChangeNotifierProvider` (del paquete `provider`) y los widgets hijos
-///    la leen con `context.watch<AvatarCreatorController>()`. Ese `watch`
-///    hace que el widget se reconstruya automáticamente cada vez que se
-///    llama a `notifyListeners()`, sin que tengas que pasar el estado a mano
-///    por cada constructor.
+///    [AvatarCreatorScope] (un `InheritedNotifier` propio de este paquete,
+///    sin depender de paquetes externos como `provider`) y los widgets
+///    hijos la leen con `AvatarCreatorScope.of(context)`. Eso hace que el
+///    widget se reconstruya automáticamente cada vez que se llama a
+///    `notifyListeners()`, sin que tengas que pasar el estado a mano por
+///    cada constructor.
 ///
 /// En otras palabras: este controlador es la "fuente de verdad" única, y los
 /// widgets (`AvatarPreview`, `AvatarCategoryTabs`, `AvatarOptionGrid`, etc.)
@@ -42,12 +43,21 @@ import '../models/avatar_selection.dart';
 /// ese estado en memoria se pierde solo si el usuario cancela o cierra sin
 /// guardar (eso lo maneja [AvatarCreatorScreen], no este controlador).
 class AvatarCreatorController extends ChangeNotifier {
+  /// [initialSelection] llega ya resuelto (un `Map<String, String>` plano,
+  /// no un `Future`): quien construye el controlador —
+  /// [AvatarCreatorScreen] — es responsable de esperar el
+  /// `Future<Map<String, String>>?` de [AvatarCreatorConfig.initialSelection]
+  /// antes de crear esta instancia, ya que un [ChangeNotifier] no tiene
+  /// forma natural de representar "todavía estoy cargando mi estado
+  /// inicial".
   AvatarCreatorController({
     required List<AvatarLayerCategory> categories,
-    AvatarSelection? initialSelection,
+    Map<String, String>? initialSelection,
   })  : assert(categories.isNotEmpty, 'El catálogo debe tener al menos una categoría'),
         categories = List.unmodifiable(categories),
-        _selection = initialSelection ?? _defaultSelection(categories),
+        _selection = initialSelection != null
+            ? AvatarSelection(initialSelection)
+            : _defaultSelection(categories),
         _activeCategoryId = categories.first.id;
 
   /// Construye la selección "de fábrica": la primera opción de cada
@@ -235,7 +245,7 @@ class AvatarCreatorController extends ChangeNotifier {
     notifyListeners();
     try {
       final Uint8List bytes = await _capturePreviewPng();
-      return AvatarCreatorResult(selection: _selection, imageBytes: bytes);
+      return AvatarCreatorResult(selection: _selection.optionByCategory, imageBytes: bytes);
     } catch (error) {
       _saveError = error;
       rethrow;
