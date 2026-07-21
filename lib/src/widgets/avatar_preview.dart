@@ -1,4 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -23,8 +22,8 @@ class AvatarPreview extends StatelessWidget {
       width: double.infinity,
       color: controller.backgroundColor,
       padding: const EdgeInsets.symmetric(
-        horizontal: BdsSpacing.SPACE_S_2,
-        vertical: BdsSpacing.SPACE_S_1,
+        horizontal: 24,
+        vertical: 16,
       ),
       child: RepaintBoundary(
         key: controller.previewBoundaryKey,

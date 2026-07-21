@@ -1,4 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../models/avatar_layer_category.dart';
@@ -24,7 +23,7 @@ class AvatarOptionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: BdsSpacing.SPACE_S_1),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           for (int index = 0; index < category.options.length; index++) ...[
@@ -35,8 +34,7 @@ class AvatarOptionRow extends StatelessWidget {
                 onTap: () => onSelected(category.options[index].id),
               ),
             ),
-            if (index != category.options.length - 1)
-              const SizedBox(width: BdsSpacing.SPACE_S_1),
+            if (index != category.options.length - 1) const SizedBox(width: 16),
           ],
         ],
       ),

@@ -51,10 +51,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       config: AvatarCreatorConfig(
         initialSelection: _lastSelection,
         // Hooks de tagueo sugeridos: el canal decide si/cómo los envía.
-        onView: () => debugPrint('tag: ${AvatarAnalyticsEvents.avatarCreatorView}'),
+        onView: () =>
+            debugPrint('tag: ${AvatarAnalyticsEvents.avatarCreatorView}'),
         onSave: () => debugPrint('tag: ${AvatarAnalyticsEvents.avatarSave}'),
-        onSaveSuccess: (_) => debugPrint('tag: ${AvatarAnalyticsEvents.avatarSaveSuccess}'),
-        onSaveError: (_) => debugPrint('tag: ${AvatarAnalyticsEvents.avatarSaveError}'),
+        onSaveSuccess: (_) =>
+            debugPrint('tag: ${AvatarAnalyticsEvents.avatarSaveSuccess}'),
+        onSaveError: (_) =>
+            debugPrint('tag: ${AvatarAnalyticsEvents.avatarSaveError}'),
       ),
     );
 
@@ -111,7 +114,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(title: const Text('Mi perfil')),
       body: Center(
         child: BcAvatar(
-          image: _avatarImageBytes != null ? MemoryImage(_avatarImageBytes!) : null,
+          image: _avatarImageBytes != null
+              ? MemoryImage(_avatarImageBytes!)
+              : null,
           size: BcAvatarSize.XLarge,
           semanticLabel: 'Foto de perfil',
           actionableIcon: Icons.camera_alt,

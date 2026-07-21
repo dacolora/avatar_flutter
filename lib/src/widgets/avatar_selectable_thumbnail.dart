@@ -1,4 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -29,8 +28,9 @@ class AvatarSelectableThumbnail extends StatelessWidget {
   final double? size;
 
   static const Color _selectedBorderColor = Color(0xFF1B1B1B);
-  static const BorderRadius _radius = BorderRadius.all(BdsBorderRadius.BORDER_RADIUS_4);
-  static const BorderRadius _innerRadius = BorderRadius.all(BdsBorderRadius.BORDER_RADIUS_3);
+  static const BorderRadius _radius = BorderRadius.all(Radius.circular(24));
+  static const BorderRadius _innerRadius =
+      BorderRadius.all(Radius.circular(16));
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class AvatarSelectableThumbnail extends StatelessWidget {
             : ColoredBox(
                 color: const Color(0xFFF2F2F3),
                 child: Padding(
-                  padding: const EdgeInsets.all(BdsSpacing.SPACE_XS_3),
+                  padding: const EdgeInsets.all(8),
                   child: SvgPicture.asset(
                     option.assetPath!,
                     package: 'avatar_flutter',

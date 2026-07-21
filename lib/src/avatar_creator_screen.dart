@@ -1,6 +1,3 @@
-import 'package:bds_mobile/bds_tokens/bds_tokens.dart';
-import 'package:bds_mobile/foundations/foundations.dart';
-import 'package:bds_mobile/organisms/organisms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
@@ -96,14 +93,14 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
               controller.selection.selectedOptionFor(activeCategory.id);
 
           return Scaffold(
-            appBar: BcHeader(
-              type: BcHeaderType.PageHeader,
-              title: widget.config.title,
-              isEnabledLogo: false,
-              itemLeftIcon: BdsFunctionalIcons.ANGLE_LEFT,
-              itemLeftLabel: widget.config.backButtonLabel,
-              itemLeftOnTap: _handleCancel,
-            ),
+            // appBar: Header(
+            //   type: BcHeaderType.PageHeader,
+            //   title: widget.config.title,
+            //   isEnabledLogo: false,
+            //   itemLeftIcon: BdsFunctionalIcons.ANGLE_LEFT,
+            //   itemLeftLabel: widget.config.backButtonLabel,
+            //   itemLeftOnTap: _handleCancel,
+            // ),
             // Todo el body vive en un único scroll, sin `Expanded`: en
             // pantallas cortas (Safari/iOS con barra de direcciones visible),
             // un `Expanded` que depende de la altura del body de un Scaffold
@@ -137,22 +134,22 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                         optionId,
                       ),
                     ),
-                  const SizedBox(height: BdsSpacing.SPACE_S_2),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
-            bottomNavigationBar: BcButtonsFooter(
-              model: BcButtonsFooterModel(
-                primaryButtonText: widget.config.saveButtonText,
-                secondaryButtonText: widget.config.cancelButtonText,
-                onPrimaryButtonPressed:
-                    controller.isSaving ? null : _handleSave,
-                onSecondaryButtonPressed: _handleCancel,
-                primaryButtonEnable: !controller.isSaving,
-                secondaryButtonEnable: widget.config.secondaryButtonEnabled,
-                axis: Axis.vertical,
-              ),
-            ),
+            // bottomNavigationBar: BcButtonsFooter(
+            //   model: BcButtonsFooterModel(
+            //     primaryButtonText: widget.config.saveButtonText,
+            //     secondaryButtonText: widget.config.cancelButtonText,
+            //     onPrimaryButtonPressed:
+            //         controller.isSaving ? null : _handleSave,
+            //     onSecondaryButtonPressed: _handleCancel,
+            //     primaryButtonEnable: !controller.isSaving,
+            //     secondaryButtonEnable: widget.config.secondaryButtonEnabled,
+            //     axis: Axis.vertical,
+            //   ),
+            // ),
           );
         },
       ),
