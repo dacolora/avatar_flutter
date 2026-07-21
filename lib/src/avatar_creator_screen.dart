@@ -93,14 +93,14 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
               controller.selection.selectedOptionFor(activeCategory.id);
 
           return Scaffold(
-            // appBar: Header(
-            //   type: BcHeaderType.PageHeader,
-            //   title: widget.config.title,
-            //   isEnabledLogo: false,
-            //   itemLeftIcon: BdsFunctionalIcons.ANGLE_LEFT,
-            //   itemLeftLabel: widget.config.backButtonLabel,
-            //   itemLeftOnTap: _handleCancel,
-            // ),
+            appBar: AppBar(
+              title: Text(widget.config.title),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new),
+                tooltip: widget.config.backButtonLabel,
+                onPressed: _handleCancel,
+              ),
+            ),
             // Todo el body vive en un único scroll, sin `Expanded`: en
             // pantallas cortas (Safari/iOS con barra de direcciones visible),
             // un `Expanded` que depende de la altura del body de un Scaffold
@@ -138,18 +138,34 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                 ],
               ),
             ),
-            // bottomNavigationBar: BcButtonsFooter(
-            //   model: BcButtonsFooterModel(
-            //     primaryButtonText: widget.config.saveButtonText,
-            //     secondaryButtonText: widget.config.cancelButtonText,
-            //     onPrimaryButtonPressed:
-            //         controller.isSaving ? null : _handleSave,
-            //     onSecondaryButtonPressed: _handleCancel,
-            //     primaryButtonEnable: !controller.isSaving,
-            //     secondaryButtonEnable: widget.config.secondaryButtonEnabled,
-            //     axis: Axis.vertical,
-            //   ),
-            // ),
+            bottomNavigationBar: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: controller.isSaving ? null : _handleSave,
+                        child: Text(widget.config.saveButtonText),
+                      ),
+                    ),
+                    if (widget.config.secondaryButtonEnabled) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: _handleCancel,
+                          child: Text(widget.config.cancelButtonText),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           );
         },
       ),

@@ -4,11 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/avatar_option.dart';
 
 /// Miniatura seleccionable usada tanto por [AvatarOptionRow] (colores) como
-/// por [AvatarOptionGrid] (capas ilustradas). No es un `BcIconButton` porque
-/// su contenido no es un `IconData` (es un SVG o un color sólido); replica el
-/// tratamiento de selección (borde) del "app-icon-button outline" de la
-/// especificación usando tokens del SDB. Cuadrada (no circular), según la
-/// especificación de diseño.
+/// por [AvatarOptionGrid] (capas ilustradas). Cuadrada (no circular), según
+/// la especificación de diseño, con un borde que marca la selección.
 class AvatarSelectableThumbnail extends StatelessWidget {
   const AvatarSelectableThumbnail({
     required this.option,

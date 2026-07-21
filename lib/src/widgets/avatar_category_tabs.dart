@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../controllers/avatar_creator_controller.dart';
 
-/// #4 (Categorías) + #5 (Card container): tira horizontal de
-/// `BcIconButton.ghost`, uno por categoría, solo uno activo a la vez.
-/// Full width, borde inferior de 1px y gradiente en los bordes para
-/// pantallas pequeñas donde el contenido desborda.
+/// #4 (Categorías) + #5 (Card container): tira horizontal de icon-buttons,
+/// uno por categoría, solo uno activo a la vez. Full width, borde inferior
+/// de 1px y gradiente en los bordes para pantallas pequeñas donde el
+/// contenido desborda.
 class AvatarCategoryTabs extends StatelessWidget {
   const AvatarCategoryTabs({super.key});
 
@@ -73,15 +73,24 @@ class _CategoryTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      // `BcIconButton.ghost` only syncs `isSelected` from its parent on the
-      // very first build (it manages the pressed state internally after
-      // that), so the key is forced to change whenever the externally-driven
-      // selection changes to guarantee the active tab always re-renders.
-      key: ValueKey('avatar-category-tab-$label-$isSelected'),
-      icon: Icon(Icons.abc),
-      isSelected: isSelected,
-      onPressed: onPressed,
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isSelected ? scheme.primaryContainer : Colors.transparent,
+          ),
+          child: Icon(icon, color: isSelected ? scheme.primary : scheme.onSurfaceVariant),
+        ),
+      ),
     );
   }
 }
