@@ -13,6 +13,9 @@ import 'package:flutter/widgets.dart';
 /// * [AvatarOption.color] — una muestra de color sólido, sin ilustración
 ///   (se usa hoy para la categoría "Color de fondo" y para las filas de
 ///   "Color del pelo"/"Tono de piel"). En vez de un asset, trae un [color].
+/// * [AvatarOption.none] — representa "ninguna opción" (por ejemplo, "Sin
+///   accesorios"): no dibuja nada ni en su miniatura ni en el preview. No
+///   tiene ni [assetPath] ni [color].
 ///
 /// ### ¿Por qué dos constructores en lugar de dos clases?
 /// Ambos tipos de opción necesitan convivir en la misma lista
@@ -26,15 +29,15 @@ import 'package:flutter/widgets.dart';
 /// (`is AvatarOptionLayer`), solo revisar si [assetPath] o [color] es
 /// distinto de `null`.
 ///
-/// Cada constructor deja el campo que no le corresponde en `null`
-/// explícitamente (por ejemplo, [AvatarOption.layer] fija `color = null`).
-/// Esa es la garantía que usa el resto del código: **siempre** habrá
-/// exactamente uno de los dos (`assetPath` o `color`) distinto de `null`,
-/// nunca ambos, nunca ninguno. Por eso en otros archivos vas a ver código
-/// como `option.assetPath!` (con `!`, el operador "confío en que no es
-/// null" de Dart) sin una comprobación previa: la comprobación real ya se
-/// hizo antes, mirando `option.color != null` para decidir qué rama pintar
-/// (ver [AvatarSelectableThumbnail]).
+/// Cada constructor deja en `null` los campos que no le corresponden (por
+/// ejemplo, [AvatarOption.layer] fija `color = null`). La garantía que usa
+/// el resto del código es que **nunca hay más de uno** de los dos
+/// (`assetPath`/`color`) distinto de `null` a la vez — pero sí puede haber
+/// **ninguno** de los dos, en el caso de [AvatarOption.none] (ver [isNone]).
+/// Por eso, antes de leer `option.assetPath!` (con `!`, el operador "confío
+/// en que no es null" de Dart) el resto del código siempre revisa primero
+/// `option.color != null` y, si corresponde, `option.isNone`, para decidir
+/// qué rama pintar (ver [AvatarSelectableThumbnail]).
 ///
 /// ### ¿Por qué extiende [Equatable]?
 /// En Dart, por defecto, `==` compara **identidad** (¿son literalmente el
@@ -70,6 +73,18 @@ class AvatarOption extends Equatable {
     this.semanticLabel,
   }) : assetPath = null;
 
+  /// Crea una opción que representa "ninguna" — por ejemplo, "Sin
+  /// accesorios" en la categoría Accesorios. Al seleccionarla, esa categoría
+  /// no aporta ninguna capa al preview (ver
+  /// [AvatarCreatorController.layerAssetPaths]) y su miniatura muestra un
+  /// ícono neutro en vez de una ilustración o un color (ver
+  /// [AvatarSelectableThumbnail]).
+  const AvatarOption.none({
+    required this.id,
+    this.semanticLabel,
+  })  : assetPath = null,
+        color = null;
+
   /// Identificador único de esta opción **dentro de su categoría** (por
   /// ejemplo, `'face-3'`). No necesita ser único entre categorías distintas,
   /// porque siempre se consulta junto con el id de la categoría (ver
@@ -78,12 +93,12 @@ class AvatarOption extends Equatable {
 
   /// Ruta del asset SVG a dibujar para esta opción. Solo tiene valor cuando
   /// la opción se creó con [AvatarOption.layer]; es `null` en las opciones
-  /// de color.
+  /// de color y en [AvatarOption.none].
   final String? assetPath;
 
   /// Color de relleno sólido de esta opción. Solo tiene valor cuando la
   /// opción se creó con [AvatarOption.color]; es `null` en las opciones
-  /// ilustradas.
+  /// ilustradas y en [AvatarOption.none].
   final Color? color;
 
   /// Texto que un lector de pantalla anuncia cuando esta opción recibe el
@@ -91,6 +106,12 @@ class AvatarOption extends Equatable {
   /// provee, el lector de pantalla simplemente no anunciará una descripción
   /// específica para esa opción.
   final String? semanticLabel;
+
+  /// `true` si esta opción se creó con [AvatarOption.none] (ni [assetPath]
+  /// ni [color]). Se usa, por ejemplo, en [AvatarSelectableThumbnail] para
+  /// decidir si mostrar un ícono neutro en vez de una ilustración o un
+  /// color.
+  bool get isNone => assetPath == null && color == null;
 
   /// Campos que [Equatable] usa para decidir si dos opciones son "la misma".
   /// Ver el comentario de la clase para entender por qué esto importa.

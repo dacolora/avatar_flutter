@@ -154,6 +154,60 @@ void main() {
       ]);
     });
 
+    test('resolveAssetPath returns null when the shape option is actually a pure color option', () {
+      // Regresión: la cuadrícula de "Color de fondo" reutiliza el mismo
+      // AvatarOptionGrid que las categorías ilustradas, así que
+      // AvatarCreatorScreen le pasa un resolveAssetPath incondicionalmente.
+      // Antes, llamar a resolveAssetPath sobre una opción de color (sin
+      // assetPath) lanzaba "Null check operator used on a null value".
+      final background = _backgroundCategory('background', ['green', 'blue']);
+      final greenOption = background.optionById('green');
+
+      expect(background.resolveAssetPath(greenOption, null), isNull);
+    });
+
+    test('resolveAssetPath returns null for an AvatarOption.none', () {
+      const category = AvatarLayerCategory(
+        id: 'extra',
+        label: 'Accesorios',
+        icon: Icons.circle,
+        kind: AvatarCategoryKind.layer,
+        options: [
+          AvatarOption.none(id: 'none', semanticLabel: 'Sin accesorios'),
+          AvatarOption.layer(id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
+        ],
+      );
+
+      expect(category.resolveAssetPath(category.optionById('none'), null), isNull);
+    });
+
+    test('a category whose default option is AvatarOption.none contributes no layer until a real style is chosen', () {
+      final categoriesWithOptionalExtra = [
+        ...categories,
+        const AvatarLayerCategory(
+          id: 'extra',
+          label: 'Accesorios',
+          icon: Icons.circle,
+          kind: AvatarCategoryKind.layer,
+          options: [
+            AvatarOption.none(id: 'none', semanticLabel: 'Sin accesorios'),
+            AvatarOption.layer(id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
+          ],
+        ),
+      ];
+      final controller = AvatarCreatorController(categories: categoriesWithOptionalExtra);
+
+      expect(controller.selectedOptionFor('extra').id, 'none');
+      expect(
+        controller.layerAssetPaths.any((path) => path.contains('extra')),
+        isFalse,
+      );
+
+      controller.selectOption('extra', 'style-1');
+
+      expect(controller.layerAssetPaths, contains('assets/avatar/extra/style-1.svg'));
+    });
+
     test('save() surfaces a StateError and records it when the preview is not mounted', () async {
       final controller = AvatarCreatorController(categories: categories);
 

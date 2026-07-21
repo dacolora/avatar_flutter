@@ -40,16 +40,22 @@ class AvatarOptionGrid extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   /// Calcula la ruta real del SVG de cada opción, en vez de usar
-  /// `option.assetPath` directamente. Se usa cuando la categoría activa
-  /// tiene una fila de color asociada (ver
-  /// [AvatarLayerCategory.colorOptions]): ahí, el archivo real de cada forma
-  /// depende también del color elegido en esa fila (por ejemplo,
-  /// `AvatarLayerCategory.resolveAssetPath(option, colorActual)`), así que
-  /// **todas** las miniaturas de la cuadrícula —no solo la seleccionada—
-  /// deben recalcular su ruta cada vez que el color cambia. Se deja en
-  /// `null` para categorías sin fila de color (Vestuario, Accesorios, Color
-  /// de fondo), donde `option.assetPath` ya es la ruta final.
-  final String Function(AvatarOption option)? resolveAssetPath;
+  /// `option.assetPath` directamente (por ejemplo,
+  /// `AvatarLayerCategory.resolveAssetPath(option, colorActual)`). Se usa
+  /// sobre todo cuando la categoría activa tiene una fila de color asociada
+  /// (ver [AvatarLayerCategory.colorOptions]): ahí, el archivo real de cada
+  /// forma depende también del color elegido en esa fila, así que **todas**
+  /// las miniaturas de la cuadrícula —no solo la seleccionada— deben
+  /// recalcular su ruta cada vez que el color cambia.
+  ///
+  /// Puede devolver `null` para una opción dada — por ejemplo, si `option`
+  /// es en realidad una opción de color puro (como en "Color de fondo") o
+  /// una opción [AvatarOption.none] ("Sin accesorios"): en esos casos no hay
+  /// ningún SVG que dibujar, y [AvatarSelectableThumbnail] ignora
+  /// `assetPathOverride` y muestra el color real o el ícono de "ninguno" en
+  /// su lugar. Si se deja todo el parámetro en `null`, cada miniatura usa
+  /// `option.assetPath` sin modificar.
+  final String? Function(AvatarOption option)? resolveAssetPath;
 
   @override
   Widget build(BuildContext context) {

@@ -13,11 +13,13 @@ import '../models/avatar_option.dart';
 /// explícitamente cuadrados más grandes con máximo 3 por fila (ver
 /// [AvatarOptionGrid]) — este widget es el que materializa esa forma.
 ///
-/// Al recibir un [AvatarOption], no necesita saber si es una opción
-/// ilustrada o de color: simplemente revisa `option.color` — si no es
-/// `null`, pinta un cuadro de ese color; si es `null`, asume que hay un
-/// `option.assetPath` (ver la garantía documentada en [AvatarOption]) y
-/// dibuja el SVG correspondiente.
+/// Al recibir un [AvatarOption], decide qué dibujar mirando sus campos, en
+/// este orden: si `option.color` no es `null`, pinta un cuadro de ese color;
+/// si no, y `option.isNone` es `true` (ver [AvatarOption.none]), dibuja un
+/// ícono neutro que representa "ninguna opción" (por ejemplo, "Sin
+/// accesorios"); en cualquier otro caso, asume que hay un `option.assetPath`
+/// (ver la garantía documentada en [AvatarOption]) y dibuja el SVG
+/// correspondiente.
 class AvatarSelectableThumbnail extends StatelessWidget {
   const AvatarSelectableThumbnail({
     required this.option,
@@ -87,17 +89,24 @@ class AvatarSelectableThumbnail extends StatelessWidget {
         borderRadius: _innerRadius,
         child: option.color != null
             ? ColoredBox(color: option.color!)
-            : ColoredBox(
-                color: const Color(0xFFF2F2F3),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: SvgPicture.asset(
-                    assetPathOverride ?? option.assetPath!,
-                    package: 'avatar_flutter',
-                    fit: BoxFit.contain,
+            : option.isNone
+                ? const ColoredBox(
+                    color: Color(0xFFF2F2F3),
+                    child: Center(
+                      child: Icon(Icons.block_outlined, color: Color(0xFF8A8A8E)),
+                    ),
+                  )
+                : ColoredBox(
+                    color: const Color(0xFFF2F2F3),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: SvgPicture.asset(
+                        assetPathOverride ?? option.assetPath!,
+                        package: 'avatar_flutter',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
-                ),
-              ),
       ),
     );
 

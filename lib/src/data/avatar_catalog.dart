@@ -84,6 +84,11 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
       label: 'Accesorios',
       icon: Icons.auto_awesome_outlined,
       semanticPrefix: 'Accesorio',
+      // A diferencia de Vestuario, Accesorios sí tiene una opción para "no
+      // llevar ninguno" (a diferencia del resto de categorías, un accesorio
+      // es opcional por naturaleza). Al ser la primera, queda preseleccionada
+      // por defecto en un avatar nuevo.
+      noneOptionLabel: 'Sin accesorios',
       assetPaths: const [
         'assets/avatar/extra/Style=1.svg',
         'assets/avatar/extra/Style=Style2.svg',
@@ -119,12 +124,19 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
 /// Construye una categoría simple ([AvatarCategoryKind.layer], sin fila de
 /// color) a partir de una lista de SVGs ya distintos entre sí — un archivo
 /// completo por opción, como los de Vestuario y Accesorios.
+///
+/// Si se pasa [noneOptionLabel], se agrega antes que todas las demás una
+/// opción [AvatarOption.none] con ese texto — para categorías donde "no
+/// llevar nada" es una elección válida (hoy, solo Accesorios). Al quedar
+/// primera en la lista, es la preseleccionada por defecto en un avatar nuevo
+/// (ver [AvatarCreatorController]).
 AvatarLayerCategory _wardrobeLikeCategory({
   required String id,
   required String label,
   required IconData icon,
   required String semanticPrefix,
   required List<String> assetPaths,
+  String? noneOptionLabel,
 }) {
   return AvatarLayerCategory(
     id: id,
@@ -132,6 +144,8 @@ AvatarLayerCategory _wardrobeLikeCategory({
     icon: icon,
     kind: AvatarCategoryKind.layer,
     options: [
+      if (noneOptionLabel != null)
+        AvatarOption.none(id: 'none', semanticLabel: noneOptionLabel),
       for (var i = 0; i < assetPaths.length; i++)
         AvatarOption.layer(
           id: '${i + 1}',

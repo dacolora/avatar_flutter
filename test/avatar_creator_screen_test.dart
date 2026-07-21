@@ -88,4 +88,30 @@ void main() {
     expect(find.text('Forma del pelo'), findsWidgets);
     expect(find.bySemanticsLabel('Forma de pelo 3'), findsOneWidget);
   });
+
+  testWidgets('abrir "Color de fondo" no lanza excepción (regresión: sus opciones son colores puros, sin assetPath)', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: AvatarCreatorScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Color de fondo'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Color de fondo'), findsWidgets);
+  });
+
+  testWidgets('Accesorios abre con "Sin accesorios" preseleccionado', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: AvatarCreatorScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Accesorios'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.bySemanticsLabel('Sin accesorios'), findsOneWidget);
+  });
 }

@@ -167,11 +167,12 @@ class AvatarLayerCategory {
     return options.firstWhere((option) => option.id == optionId, orElse: () => options.first);
   }
 
-  /// Calcula la ruta real del SVG de [shapeOption] dentro de esta categoría.
+  /// Calcula la ruta real del SVG de [shapeOption] dentro de esta categoría,
+  /// o `null` si [shapeOption] no tiene ninguna ilustración que dibujar.
   ///
-  /// En la mayoría de las categorías (Vestuario, Accesorios, Color de fondo)
-  /// cada opción tiene una ruta fija: para esas, este método simplemente
-  /// devuelve `shapeOption.assetPath` sin tocarlo (y [colorOption] se ignora,
+  /// En la mayoría de las categorías (Vestuario, Accesorios) cada opción
+  /// tiene una ruta fija: para esas, este método simplemente devuelve
+  /// `shapeOption.assetPath` sin tocarlo (y [colorOption] se ignora,
   /// típicamente porque es `null`).
   ///
   /// En Cabello y Rostro, en cambio, el color **viene incluido en el propio
@@ -181,8 +182,18 @@ class AvatarLayerCategory {
   /// marcador `{color}` (ver [options]), y este método lo reemplaza por el
   /// id de [colorOption] (que coincide con el número usado en el nombre del
   /// archivo, por ejemplo `'3'`).
-  String resolveAssetPath(AvatarOption shapeOption, AvatarOption? colorOption) {
-    final template = shapeOption.assetPath!;
+  ///
+  /// Devuelve `null` cuando [shapeOption] no tiene `assetPath` — porque es
+  /// una opción de color pura (por ejemplo, una de las de "Color de fondo",
+  /// donde `options` son en realidad [AvatarOption.color]) o porque es
+  /// [AvatarOption.none] ("Sin accesorios"). En ambos casos no hay ningún
+  /// SVG que dibujar: quien llama a este método (ver
+  /// [AvatarCreatorController.layerAssetPaths] y
+  /// [AvatarOptionGrid.resolveAssetPath]) debe manejar ese `null` sin
+  /// intentar renderizar nada.
+  String? resolveAssetPath(AvatarOption shapeOption, AvatarOption? colorOption) {
+    final template = shapeOption.assetPath;
+    if (template == null) return null;
     if (colorOption == null) return template;
     return template.replaceFirst('{color}', colorOption.id);
   }

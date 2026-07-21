@@ -204,7 +204,11 @@ canal nunca llega a enterarse de una elección que el usuario no confirmó.
 
 Vestuario y Accesorios usan SVGs completos e independientes por opción (los
 nombres de archivo son los que exportó Figma, por ejemplo
-`Property 1=3.svg`, `Style=Style4.svg`); no tienen fila de color.
+`Property 1=3.svg`, `Style=Style4.svg`); no tienen fila de color. Accesorios,
+además, es la única categoría con una opción `AvatarOption.none` ("Sin
+accesorios", preseleccionada por defecto): al elegirla, esa categoría no
+aporta ninguna capa al preview — ver
+[AvatarCreatorController.layerAssetPaths].
 
 Cabello y Rostro sí la tienen, pero el color **no se aplica en tiempo de
 ejecución** (no hay ningún `ColorFilter` ni tinte): diseño entregó un SVG ya

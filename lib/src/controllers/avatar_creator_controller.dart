@@ -191,14 +191,23 @@ class AvatarCreatorController extends ChangeNotifier {
   /// Rostro, esto devuelve directamente el archivo ya coloreado por diseño
   /// para esa combinación exacta, sin ningún procesamiento adicional en
   /// tiempo de ejecución.
-  List<String> get layerAssetPaths => [
-        for (final category in categories)
-          if (!category.isBackground)
-            category.resolveAssetPath(
-              selectedOptionFor(category.id),
-              selectedColorOptionFor(category.id),
-            ),
-      ];
+  ///
+  /// Si la opción elegida en una categoría es [AvatarOption.none] (por
+  /// ejemplo, "Sin accesorios"), `resolveAssetPath` devuelve `null` para
+  /// ella y esa categoría simplemente **no aporta ninguna capa** — por eso
+  /// esta lista puede tener menos elementos que categorías no-fondo.
+  List<String> get layerAssetPaths {
+    final paths = <String>[];
+    for (final category in categories) {
+      if (category.isBackground) continue;
+      final assetPath = category.resolveAssetPath(
+        selectedOptionFor(category.id),
+        selectedColorOptionFor(category.id),
+      );
+      if (assetPath != null) paths.add(assetPath);
+    }
+    return paths;
+  }
 
   /// Color de fondo actualmente seleccionado (busca la categoría marcada con
   /// [AvatarLayerCategory.isBackground] y devuelve su opción elegida). Si el
