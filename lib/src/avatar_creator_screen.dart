@@ -236,6 +236,11 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
           final activeCategory = controller.activeCategory;
           final selectedOptionId =
               controller.selection.selectedOptionFor(activeCategory.id);
+          final isLayerWithColor =
+              activeCategory.kind == AvatarCategoryKind.layerWithColor;
+          final selectedColorOptionId = isLayerWithColor
+              ? controller.selectedColorOptionFor(activeCategory.id)?.id
+              : null;
 
           return Scaffold(
             appBar: AppBar(
@@ -265,25 +270,49 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                 children: [
                   const AvatarPreview(),
                   const AvatarCategoryTabs(),
-                  AvatarSectionLabel(label: activeCategory.label),
-                  if (activeCategory.kind == AvatarCategoryKind.colorRow)
+                  // Las categorías de tipo `layerWithColor` (Cabello, Rostro)
+                  // muestran DOS secciones en la misma pantalla: primero la
+                  // fila de color (`colorOptions`) y debajo la cuadrícula de
+                  // forma (`options`), tal como lo pide la especificación —
+                  // ver el comentario de [AvatarCategoryKind.layerWithColor].
+                  // Las categorías simples (Vestuario, Accesorios, Color de
+                  // fondo) solo muestran la cuadrícula.
+                  if (isLayerWithColor) ...[
+                    AvatarSectionLabel(label: activeCategory.colorSectionLabel!),
                     AvatarOptionRow(
-                      category: activeCategory,
+                      options: activeCategory.colorOptions!,
+                      selectedOptionId: selectedColorOptionId,
+                      onSelected: (optionId) => controller.selectColorOption(
+                        activeCategory.id,
+                        optionId,
+                      ),
+                    ),
+                    AvatarSectionLabel(
+                      label: activeCategory.shapeSectionLabel ?? activeCategory.label,
+                    ),
+                    AvatarOptionGrid(
+                      options: activeCategory.options,
                       selectedOptionId: selectedOptionId,
+                      // El color recién elegido en la fila de arriba tiñe
+                      // todas las formas de la cuadrícula, seleccionadas o
+                      // no — ver [AvatarSelectableThumbnail.tint].
+                      tint: controller.selectedColorOptionFor(activeCategory.id)?.color,
                       onSelected: (optionId) => controller.selectOption(
                         activeCategory.id,
                         optionId,
                       ),
-                    )
-                  else
+                    ),
+                  ] else ...[
+                    AvatarSectionLabel(label: activeCategory.label),
                     AvatarOptionGrid(
-                      category: activeCategory,
+                      options: activeCategory.options,
                       selectedOptionId: selectedOptionId,
                       onSelected: (optionId) => controller.selectOption(
                         activeCategory.id,
                         optionId,
                       ),
                     ),
+                  ],
                   const SizedBox(height: 16),
                 ],
               ),

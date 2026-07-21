@@ -52,15 +52,15 @@ class AvatarPreview extends StatelessWidget {
           // mismo espacio, en el orden en que aparecen en la lista `children`
           // (el primero queda más al fondo, el último más arriba). Aquí cada
           // hijo es una capa SVG seleccionada, y el orden viene dado por
-          // `controller.layerAssetPaths`, que a su vez respeta el orden del
+          // `controller.previewLayers`, que a su vez respeta el orden del
           // catálogo (ver [AvatarLayerCategory] y
-          // [AvatarCreatorController.layerAssetPaths]).
+          // [AvatarCreatorController.previewLayers]).
           child: Stack(
             fit: StackFit.expand,
             children: [
-              for (final assetPath in controller.layerAssetPaths)
+              for (final layer in controller.previewLayers)
                 SvgPicture.asset(
-                  assetPath,
+                  layer.assetPath,
                   // `package: 'avatar_flutter'` le dice a `flutter_svg` que
                   // el asset vive dentro de este paquete (en su propia
                   // carpeta `assets/`), no en la app que lo consume. Es
@@ -70,6 +70,14 @@ class AvatarPreview extends StatelessWidget {
                   // explícitamente de qué paquete vienen.
                   package: 'avatar_flutter',
                   fit: BoxFit.contain,
+                  // Si la categoría de esta capa tiene una fila de color
+                  // (Cabello, Rostro), `layer.tint` trae el color elegido y
+                  // el `ColorFilter` repinta el SVG completo con ese color —
+                  // la misma técnica que usan las miniaturas de
+                  // [AvatarOptionGrid] (ver [AvatarSelectableThumbnail.tint]).
+                  colorFilter: layer.tint != null
+                      ? ColorFilter.mode(layer.tint!, BlendMode.srcIn)
+                      : null,
                 ),
             ],
           ),

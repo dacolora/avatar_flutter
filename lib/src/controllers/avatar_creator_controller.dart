@@ -61,13 +61,31 @@ class AvatarCreatorController extends ChangeNotifier {
         _activeCategoryId = categories.first.id;
 
   /// Construye la selección "de fábrica": la primera opción de cada
-  /// categoría. Se usa cuando el canal no proporciona una
-  /// [AvatarCreatorConfig.initialSelection] explícita (caso "avatar nuevo").
+  /// categoría, y además la primera opción de color de cada categoría que
+  /// tenga [AvatarLayerCategory.colorOptions]. Se usa cuando el canal no
+  /// proporciona una [AvatarCreatorConfig.initialSelection] explícita (caso
+  /// "avatar nuevo").
   static AvatarSelection _defaultSelection(List<AvatarLayerCategory> categories) {
-    return AvatarSelection({
-      for (final category in categories) category.id: category.options.first.id,
-    });
+    final map = <String, String>{};
+    for (final category in categories) {
+      map[category.id] = category.options.first.id;
+      final colorOptions = category.colorOptions;
+      if (colorOptions != null) {
+        map[_colorSelectionKey(category.id)] = colorOptions.first.id;
+      }
+    }
+    return AvatarSelection(map);
   }
+
+  /// La selección de color de una categoría se guarda bajo una llave
+  /// distinta a la de su forma, dentro del mismo mapa `categoryId ->
+  /// optionId` de [AvatarSelection] — así no hace falta ampliar el modelo de
+  /// selección ni el contrato público (`Map<String, String>` de
+  /// [AvatarCreatorConfig.initialSelection] / [AvatarCreatorResult.selection])
+  /// para soportar "dos selecciones por categoría": simplemente se registra
+  /// una entrada extra con este id derivado (por ejemplo, `'hair_color'`
+  /// junto a `'hair'`).
+  static String _colorSelectionKey(String categoryId) => '${categoryId}_color';
 
   /// Catálogo de categorías con el que se creó este controlador. Se guarda
   /// envuelto en `List.unmodifiable(...)` para que nadie fuera de esta clase
@@ -132,25 +150,73 @@ class AvatarCreatorController extends ChangeNotifier {
     return optionId == null ? category.options.first : category.optionById(optionId);
   }
 
-  /// Rutas de los assets SVG de todas las categorías de tipo
-  /// [AvatarCategoryKind.layer], en el mismo orden en que aparecen en
-  /// [categories]. [AvatarPreview] recorre esta lista y dibuja cada asset
-  /// uno encima del otro (con un `Stack`), así que el orden aquí determina
-  /// literalmente qué capa queda "por encima" de cuál en el dibujo final.
-  List<String> get layerAssetPaths => [
+  /// Devuelve la opción de color actualmente seleccionada para [categoryId],
+  /// o `null` si esa categoría no es de tipo
+  /// [AvatarCategoryKind.layerWithColor] (es decir, si no tiene
+  /// [AvatarLayerCategory.colorOptions]).
+  ///
+  /// Al igual que [selectedOptionFor], si la categoría sí tiene
+  /// [AvatarLayerCategory.colorOptions] pero todavía no hay ninguna
+  /// selección de color registrada, se devuelve `colorOptions.first` como
+  /// respaldo en vez de `null`.
+  AvatarOption? selectedColorOptionFor(String categoryId) {
+    final category = categoryById(categoryId);
+    final colorOptions = category.colorOptions;
+    if (colorOptions == null) return null;
+    final optionId = _selection.selectedOptionFor(_colorSelectionKey(categoryId));
+    return optionId == null ? colorOptions.first : category.colorOptionById(optionId);
+  }
+
+  /// Registra que, dentro de la fila de color de [categoryId], el usuario
+  /// eligió la opción [optionId]. A diferencia de [selectOption], esto no
+  /// toca la forma seleccionada de la categoría: ambas selecciones (forma y
+  /// color) conviven de forma independiente (ver [_colorSelectionKey]).
+  void selectColorOption(String categoryId, String optionId) {
+    _selection = _selection.withOption(
+      categoryId: _colorSelectionKey(categoryId),
+      optionId: optionId,
+    );
+    notifyListeners();
+  }
+
+  /// Las capas SVG a apilar en el preview (todas las categorías **excepto**
+  /// la de fondo, ver [AvatarLayerCategory.isBackground]), en el mismo
+  /// orden en que aparecen en [categories] — ese orden determina literalmente
+  /// qué capa queda "por encima" de cuál en el dibujo final (ver
+  /// [AvatarPreview], que recorre esta lista con un `Stack`).
+  ///
+  /// Cada elemento es un [Record] de Dart (`({String assetPath, Color?
+  /// tint})`, una forma ligera de agrupar un par de valores relacionados
+  /// sin tener que declarar una clase nueva solo para esto) con:
+  /// * `assetPath`: el SVG de la forma elegida en esa categoría.
+  /// * `tint`: si la categoría tiene [AvatarLayerCategory.colorOptions]
+  ///   (por ejemplo, Cabello o Rostro), el color elegido en esa fila; si no
+  ///   (por ejemplo, Vestuario o Accesorios), `null`.
+  ///
+  /// [AvatarPreview] usa `tint` para aplicar un `ColorFilter` sobre el SVG
+  /// correspondiente, pintándolo de ese color de forma pareja. Así, cambiar
+  /// el color de una categoría (por ejemplo, poner "morado" en "Color del
+  /// pelo") recolorea la capa ya seleccionada sin necesitar un SVG nuevo por
+  /// cada combinación de forma y color — la misma técnica se usa en las
+  /// miniaturas de [AvatarOptionGrid] para que **todas** las formas de la
+  /// cuadrícula (no solo la elegida) se vean con ese color.
+  List<({String assetPath, Color? tint})> get previewLayers => [
         for (final category in categories)
-          if (category.kind == AvatarCategoryKind.layer)
-            selectedOptionFor(category.id).assetPath!,
+          if (!category.isBackground)
+            (
+              assetPath: selectedOptionFor(category.id).assetPath!,
+              tint: selectedColorOptionFor(category.id)?.color,
+            ),
       ];
 
-  /// Color de fondo actualmente seleccionado (busca la primera categoría de
-  /// tipo [AvatarCategoryKind.colorRow] en el catálogo y devuelve su opción
-  /// elegida). Si el catálogo no tuviera ninguna categoría de color —algo
-  /// que no ocurre con [defaultAvatarCatalog], pero sí podría pasar con un
-  /// catálogo personalizado— se usa `Colors.transparent` como respaldo.
+  /// Color de fondo actualmente seleccionado (busca la categoría marcada con
+  /// [AvatarLayerCategory.isBackground] y devuelve su opción elegida). Si el
+  /// catálogo no tuviera ninguna categoría de fondo —algo que no ocurre con
+  /// [defaultAvatarCatalog], pero sí podría pasar con un catálogo
+  /// personalizado— se usa `Colors.transparent` como respaldo.
   Color get backgroundColor {
     for (final category in categories) {
-      if (category.kind == AvatarCategoryKind.colorRow) {
+      if (category.isBackground) {
         return selectedOptionFor(category.id).color ?? Colors.transparent;
       }
     }

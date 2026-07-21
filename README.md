@@ -179,21 +179,26 @@ arriba a abajo, la pantalla arma:
 1. **`AvatarPreview`** (`lib/src/widgets/avatar_preview.dart`): un cuadrado
    con el color de fondo elegido (`controller.backgroundColor`) y, encima,
    un `Stack` con las capas ilustradas seleccionadas
-   (`controller.layerAssetPaths`), envuelto en un `RepaintBoundary` — esto
+   (`controller.previewLayers`), envuelto en un `RepaintBoundary` — esto
    último es clave para el paso de guardado (ver más abajo).
 2. **`AvatarCategoryTabs`** (`lib/src/widgets/avatar_category_tabs.dart`): la
    fila de tabs, uno por categoría del catálogo, resaltando
    `controller.activeCategoryId`.
-3. **`AvatarSectionLabel`**: el título de la categoría activa.
-4. **`AvatarOptionRow`** o **`AvatarOptionGrid`**, según el
-   `AvatarCategoryKind` de la categoría activa: fila (máx. 5, colores) o
-   cuadrícula (máx. 10, capas ilustradas). Cada opción se dibuja con
-   **`AvatarSelectableThumbnail`**, la miniatura cuadrada compartida por
-   ambos.
-5. En `bottomNavigationBar` (fijo, fuera del área con scroll): los botones
+3. Según el `AvatarCategoryKind` de la categoría activa:
+   * **`layer`** (Vestuario, Accesorios, Color de fondo): una sola sección,
+     `AvatarSectionLabel` + **`AvatarOptionGrid`** (máx. 10 opciones).
+   * **`layerWithColor`** (Cabello, Rostro): **dos** secciones seguidas —
+     `AvatarSectionLabel` + **`AvatarOptionRow`** con la fila de color (máx.
+     5), y debajo otro `AvatarSectionLabel` + **`AvatarOptionGrid`** con la
+     fila de formas (máx. 10), donde el color elegido tiñe todas las formas
+     (ver la sección de [tinte de color](#tinte-de-color-sin-svgs-nuevos) más
+     abajo). Cada opción, de cualquiera de las dos secciones, se dibuja con
+     **`AvatarSelectableThumbnail`**, la miniatura cuadrada compartida por
+     ambos widgets.
+4. En `bottomNavigationBar` (fijo, fuera del área con scroll): los botones
    "Guardar" y, si `config.secondaryButtonEnabled`, "Cancelar".
 
-Todo el contenido de arriba (1 a 4) vive dentro de un único
+Todo el contenido de arriba (1 a 3) vive dentro de un único
 `SingleChildScrollView`, sin ningún `Expanded` — una decisión deliberada para
 evitar un bug real observado en Safari/iOS donde un `Expanded` puede colapsar
 a 0px cuando la barra de direcciones del navegador cambia de tamaño.
@@ -269,6 +274,31 @@ en vez de `context.watch<AvatarCreatorController>()`. Fuera de ese cambio de
 sintaxis, el comportamiento es idéntico: es un reemplazo interno, transparente
 para el canal — `AvatarCreatorScope` ni siquiera se exporta desde
 `avatar_flutter.dart`, porque el canal nunca necesita tocarlo directamente.
+
+## Tinte de color sin SVGs nuevos
+
+Cabello y Rostro no solo eligen una forma (corte de pelo / expresión):
+también eligen un color (color de pelo / tono de piel) en una fila aparte
+(ver [`AvatarCategoryKind.layerWithColor`](lib/src/models/avatar_layer_category.dart)).
+Ese color **no** se resuelve con más SVGs — se aplica en tiempo real con un
+[`ColorFilter.mode(color, BlendMode.srcIn)`](https://api.flutter.dev/flutter/dart-ui/BlendMode.html)
+sobre el SVG existente, que repinta cada píxel opaco del dibujo con el color
+elegido, conservando su forma intacta. Por eso, si el usuario elige "morado"
+en "Color del pelo":
+
+* La capa de pelo del preview (`AvatarPreview`) se pinta morada al instante.
+* **Las 10 miniaturas** de la cuadrícula "Forma del pelo" (`AvatarOptionGrid`)
+  también se pintan moradas — no solo la que esté seleccionada — porque
+  `AvatarOptionGrid` recibe ese mismo color como `tint` y lo aplica a todas
+  sus miniaturas por igual (`AvatarSelectableThumbnail.tint`).
+
+Esta técnica funciona perfecto para ilustraciones de un solo tono (como las
+formas de pelo). Si en el futuro un SVG necesita un detalle en un segundo
+tono que **no** deba teñirse (por ejemplo, un ojo o una boca en la expresión
+del rostro, en contraste con el tono de piel), un `ColorFilter` sobre todo el
+SVG no alcanza — haría falta separar ese detalle en un asset propio (o
+reestructurar el SVG) para poder teñir solo la parte de "piel" y dejar el
+detalle intacto.
 
 ## Estado de los assets
 

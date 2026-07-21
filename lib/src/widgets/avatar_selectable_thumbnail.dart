@@ -24,6 +24,7 @@ class AvatarSelectableThumbnail extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.size,
+    this.tint,
     super.key,
   });
 
@@ -42,6 +43,19 @@ class AvatarSelectableThumbnail extends StatelessWidget {
   /// su widget padre, manteniendo siempre una relación de aspecto 1:1 (ver
   /// el uso de [AspectRatio] más abajo).
   final double? size;
+
+  /// Color con el que se repinta el SVG de esta miniatura, ignorando el
+  /// color que trae el propio archivo. Solo tiene efecto cuando `option` es
+  /// una opción ilustrada (`option.assetPath != null`); en una opción de
+  /// color (`option.color != null`) no se usa, porque ahí la miniatura ya
+  /// muestra el color real de la opción.
+  ///
+  /// Lo pasa [AvatarOptionGrid] cuando la categoría activa tiene una fila de
+  /// color asociada (ver [AvatarLayerCategory.colorOptions]): así, **todas**
+  /// las miniaturas de la cuadrícula —no solo la seleccionada— reflejan el
+  /// color elegido en esa fila, sin necesidad de un SVG distinto por cada
+  /// combinación de forma y color.
+  final Color? tint;
 
   static const Color _selectedBorderColor = Color(0xFF1B1B1B);
   static const BorderRadius _radius = BorderRadius.all(Radius.circular(24));
@@ -80,6 +94,14 @@ class AvatarSelectableThumbnail extends StatelessWidget {
                     option.assetPath!,
                     package: 'avatar_flutter',
                     fit: BoxFit.contain,
+                    // `ColorFilter.mode(color, BlendMode.srcIn)` reemplaza el
+                    // color de cada píxel opaco del SVG por `tint`,
+                    // conservando su forma (su canal alfa) intacta — es la
+                    // forma estándar en Flutter de "repintar" una ilustración
+                    // de un solo color sin tener que editar el archivo SVG.
+                    colorFilter: tint != null
+                        ? ColorFilter.mode(tint!, BlendMode.srcIn)
+                        : null,
                   ),
                 ),
               ),

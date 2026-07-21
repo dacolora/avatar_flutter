@@ -11,8 +11,8 @@ import 'package:flutter/widgets.dart';
 /// * [AvatarOption.layer] — una capa ilustrada (un peinado, un rostro, un
 ///   vestuario...). Apunta a un archivo SVG mediante [assetPath].
 /// * [AvatarOption.color] — una muestra de color sólido, sin ilustración
-///   (se usa hoy para la categoría "Color de fondo"). En vez de un asset,
-///   trae un [color].
+///   (se usa hoy para la categoría "Color de fondo" y para las filas de
+///   "Color del pelo"/"Tono de piel"). En vez de un asset, trae un [color].
 ///
 /// ### ¿Por qué dos constructores en lugar de dos clases?
 /// Ambos tipos de opción necesitan convivir en la misma lista
@@ -59,9 +59,11 @@ class AvatarOption extends Equatable {
     this.semanticLabel,
   }) : color = null;
 
-  /// Crea una opción de color sólido, sin ilustración. La usan las
-  /// categorías de tipo [AvatarCategoryKind.colorRow], como "Color de
-  /// fondo".
+  /// Crea una opción de color sólido, sin ilustración. La usan tanto la
+  /// categoría de fondo ([AvatarLayerCategory.isBackground]) como la fila de
+  /// color de las categorías de tipo [AvatarCategoryKind.layerWithColor]
+  /// ([AvatarLayerCategory.colorOptions]), como "Color de fondo", "Color del
+  /// pelo" o "Tono de piel".
   const AvatarOption.color({
     required this.id,
     required this.color,
