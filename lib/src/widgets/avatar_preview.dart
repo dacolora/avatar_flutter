@@ -20,10 +20,11 @@ class AvatarPreview extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       width: double.infinity,
+      height: 240,
       color: controller.backgroundColor,
       padding: const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 16,
+        horizontal: 16,
+        vertical: 24,
       ),
       child: RepaintBoundary(
         key: controller.previewBoundaryKey,

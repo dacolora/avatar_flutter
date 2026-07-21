@@ -152,16 +152,16 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                         child: Text(widget.config.saveButtonText),
                       ),
                     ),
-                    if (widget.config.secondaryButtonEnabled) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: _handleCancel,
-                          child: Text(widget.config.cancelButtonText),
-                        ),
-                      ),
-                    ],
+                    // if (widget.config.secondaryButtonEnabled) ...[
+                    //   const SizedBox(height: 16),
+                    //   SizedBox(
+                    //     width: double.infinity,
+                    //     child: OutlinedButton(
+                    //       onPressed: _handleCancel,
+                    //       child: Text(widget.config.cancelButtonText),
+                    //     ),
+                    //   ),
+                    // ],
                   ],
                 ),
               ),
