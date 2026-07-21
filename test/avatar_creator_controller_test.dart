@@ -43,7 +43,10 @@ AvatarLayerCategory _layerWithColorCategory(
     shapeSectionLabel: 'Forma de $id',
     options: [
       for (final optionId in optionIds)
-        AvatarOption.layer(id: optionId, assetPath: 'assets/avatar/$id/$optionId.svg'),
+        AvatarOption.layer(
+          id: optionId,
+          assetPath: 'assets/avatar/$id/Color={color}, Shape=$optionId.svg',
+        ),
     ],
     colorOptions: [
       for (final optionId in colorOptionIds)
@@ -141,13 +144,13 @@ void main() {
       expect(controller.selectedOptionFor('body').id, 'body-2');
     });
 
-    test('previewLayers excludes the background category and tints layers with colorOptions', () {
+    test('layerAssetPaths excludes the background category and resolves the shape+color combination', () {
       final controller = AvatarCreatorController(categories: categories);
       controller.selectColorOption('hair', 'purple');
 
-      expect(controller.previewLayers, [
-        (assetPath: 'assets/avatar/body/body-1.svg', tint: null),
-        (assetPath: 'assets/avatar/hair/hair-1.svg', tint: Colors.primaries[1]),
+      expect(controller.layerAssetPaths, [
+        'assets/avatar/body/body-1.svg',
+        'assets/avatar/hair/Color=purple, Shape=hair-1.svg',
       ]);
     });
 

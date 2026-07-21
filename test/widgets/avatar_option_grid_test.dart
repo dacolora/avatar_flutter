@@ -1,7 +1,6 @@
 import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:avatar_flutter/src/widgets/avatar_option_grid.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -38,36 +37,40 @@ void main() {
     expect(selectedOptionId, 'blue');
   });
 
-  testWidgets('AvatarOptionGrid tints every thumbnail with the given color', (tester) async {
+  testWidgets('AvatarOptionGrid llama a resolveAssetPath por cada opción, en vez de usar option.assetPath directo', (tester) async {
     const options = [
-      AvatarOption.layer(id: 'hair-1', assetPath: 'assets/avatar/hair/hair_1.svg'),
-      AvatarOption.layer(id: 'hair-2', assetPath: 'assets/avatar/hair/hair_1.svg'),
+      AvatarOption.layer(id: '1', assetPath: 'assets/avatar/hair/Color={color}, Expression=1.svg'),
+      AvatarOption.layer(id: '2', assetPath: 'assets/avatar/hair/Color={color}, Expression=2.svg'),
     ];
+    final resolvedPaths = <String>[];
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: AvatarOptionGrid(
             options: options,
-            selectedOptionId: 'hair-1',
-            tint: Colors.purple,
+            selectedOptionId: '1',
+            resolveAssetPath: (option) {
+              final resolved = option.assetPath!.replaceFirst('{color}', '3');
+              resolvedPaths.add(resolved);
+              return resolved;
+            },
             onSelected: (_) {},
           ),
         ),
       ),
     );
 
-    final svgPictures = tester.widgetList<SvgPicture>(find.byType(SvgPicture));
-    expect(svgPictures, hasLength(2));
-    for (final svgPicture in svgPictures) {
-      expect(svgPicture.colorFilter, const ColorFilter.mode(Colors.purple, BlendMode.srcIn));
-    }
+    expect(resolvedPaths, [
+      'assets/avatar/hair/Color=3, Expression=1.svg',
+      'assets/avatar/hair/Color=3, Expression=2.svg',
+    ]);
   });
 
   testWidgets('AvatarOptionGrid enforces the 10-item spec limit', (tester) async {
     final tooManyOptions = List.generate(
       11,
-      (index) => AvatarOption.layer(id: 'body-$index', assetPath: 'assets/avatar/body/body_1.svg'),
+      (index) => AvatarOption.layer(id: 'body-$index', assetPath: 'assets/avatar/body/Property 1=1.svg'),
     );
 
     expect(

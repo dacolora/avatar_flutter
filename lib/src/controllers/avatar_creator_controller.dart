@@ -179,33 +179,24 @@ class AvatarCreatorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Las capas SVG a apilar en el preview (todas las categorías **excepto**
-  /// la de fondo, ver [AvatarLayerCategory.isBackground]), en el mismo
-  /// orden en que aparecen en [categories] — ese orden determina literalmente
-  /// qué capa queda "por encima" de cuál en el dibujo final (ver
-  /// [AvatarPreview], que recorre esta lista con un `Stack`).
+  /// Rutas de los SVG a apilar en el preview (todas las categorías
+  /// **excepto** la de fondo, ver [AvatarLayerCategory.isBackground]), en el
+  /// mismo orden en que aparecen en [categories] — ese orden determina
+  /// literalmente qué capa queda "por encima" de cuál en el dibujo final
+  /// (ver [AvatarPreview], que recorre esta lista con un `Stack`).
   ///
-  /// Cada elemento es un [Record] de Dart (`({String assetPath, Color?
-  /// tint})`, una forma ligera de agrupar un par de valores relacionados
-  /// sin tener que declarar una clase nueva solo para esto) con:
-  /// * `assetPath`: el SVG de la forma elegida en esa categoría.
-  /// * `tint`: si la categoría tiene [AvatarLayerCategory.colorOptions]
-  ///   (por ejemplo, Cabello o Rostro), el color elegido en esa fila; si no
-  ///   (por ejemplo, Vestuario o Accesorios), `null`.
-  ///
-  /// [AvatarPreview] usa `tint` para aplicar un `ColorFilter` sobre el SVG
-  /// correspondiente, pintándolo de ese color de forma pareja. Así, cambiar
-  /// el color de una categoría (por ejemplo, poner "morado" en "Color del
-  /// pelo") recolorea la capa ya seleccionada sin necesitar un SVG nuevo por
-  /// cada combinación de forma y color — la misma técnica se usa en las
-  /// miniaturas de [AvatarOptionGrid] para que **todas** las formas de la
-  /// cuadrícula (no solo la elegida) se vean con ese color.
-  List<({String assetPath, Color? tint})> get previewLayers => [
+  /// Cada ruta se calcula con [AvatarLayerCategory.resolveAssetPath], que
+  /// combina la forma elegida con el color elegido en esa misma categoría
+  /// (si tiene, ver [AvatarLayerCategory.colorOptions]) — así, en Cabello y
+  /// Rostro, esto devuelve directamente el archivo ya coloreado por diseño
+  /// para esa combinación exacta, sin ningún procesamiento adicional en
+  /// tiempo de ejecución.
+  List<String> get layerAssetPaths => [
         for (final category in categories)
           if (!category.isBackground)
-            (
-              assetPath: selectedOptionFor(category.id).assetPath!,
-              tint: selectedColorOptionFor(category.id)?.color,
+            category.resolveAssetPath(
+              selectedOptionFor(category.id),
+              selectedColorOptionFor(category.id),
             ),
       ];
 

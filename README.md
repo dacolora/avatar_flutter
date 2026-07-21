@@ -28,7 +28,10 @@ comentario de documentación (`///`) en el código — este README da la vista
 final resultado = await AvatarCreatorScreen.push(
   context,
   config: AvatarCreatorConfig(
-    initialSelection: seleccionGuardadaDelUsuario, // null = avatar nuevo
+    // initialSelection es un Future<Map<String, String>>? — pensado para
+    // leer de SharedPreferences (que es async) sin bloquear la config.
+    // Si se deja en null, es un avatar nuevo.
+    initialSelection: leerSeleccionGuardada(),
     onSave: () => analytics.track(AvatarAnalyticsEvents.avatarSave),
     onSaveSuccess: (r) => analytics.track(AvatarAnalyticsEvents.avatarSaveSuccess),
     onSaveError: (e) => analytics.track(AvatarAnalyticsEvents.avatarSaveError),
@@ -37,10 +40,11 @@ final resultado = await AvatarCreatorScreen.push(
 
 if (resultado is AvatarCreatorResult) {
   // El widget solo generó la imagen (resultado.imageBytes) y la selección
-  // (resultado.selection). Subirla, guardarla y asociarla al perfil es
-  // responsabilidad de ESTE código, del canal — ver la sección siguiente.
+  // (resultado.selection, un Map<String, String> plano). Subirla, guardarla
+  // y asociarla al perfil es responsabilidad de ESTE código, del canal — ver
+  // la sección siguiente.
   await miServicioDePerfil.actualizarAvatar(resultado.imageBytes);
-  guardarSeleccionLocalmente(resultado.selection);
+  await guardarSeleccionEnSharedPreferences(resultado.selection);
 }
 ```
 
@@ -68,14 +72,14 @@ concretas:
 | Responsabilidad | Librería (`avatar_flutter`) | Canal (la app que la embebe) |
 |---|---|---|
 | Catálogo de categorías y su orden (Rostro, Cabello, Vestuario, Accesorios, Color de fondo) | ✅ Definido en `defaultAvatarCatalog()` | ❌ No se personaliza; viene de la especificación de diseño |
-| Diseño visual de header, preview, tabs, grid/row, footer | ✅ Fijado por la especificación de diseño | ❌ Solo puede cambiar textos y habilitar/deshabilitar el botón secundario, vía `AvatarCreatorConfig` |
+| Diseño visual de header, preview, tabs, grid/row, footer | ✅ Fijado por la especificación de diseño | ❌ Solo puede cambiar los textos, vía `AvatarCreatorConfig` |
 | Guardar la selección en memoria mientras el usuario navega entre tabs | ✅ `AvatarCreatorController` | — |
 | Componer las capas seleccionadas en una imagen | ✅ `AvatarCreatorController.save()` (captura el `RepaintBoundary` del preview) | — |
 | Persistir la imagen generada (subirla a un servidor, guardarla en disco/caché, asociarla al perfil del usuario) | ❌ La librería **nunca** hace esto | ✅ El canal, dentro de `onSaveSuccess` |
 | Decidir qué pasa si falla el guardado (reintentar, mostrar un mensaje propio, loguear a un sistema de monitoreo) | ⚠️ La librería muestra un `SnackBar` genérico y expone el error | ✅ El canal, dentro de `onSaveError`, puede añadir su propio manejo |
 | Analítica / tagueo (`avatar_creator_view`, `avatar_save`, ...) | ⚠️ Solo sugiere los nombres de evento (`AvatarAnalyticsEvents`) | ✅ El canal decide si los usa, con qué herramienta y cuándo — el widget nunca dispara analítica por sí mismo |
 | Recuperar la última selección del usuario para reabrir el creador en modo "editar" | ❌ La librería no persiste nada entre sesiones | ✅ El canal guarda `resultado.selection` y la vuelve a pasar como `initialSelection` la próxima vez |
-| Agregar nuevas variantes de arte (ej. `hair_2.svg`) | ✅ Es un cambio de datos en `avatar_catalog.dart`, sin tocar widgets | — |
+| Agregar nuevas variantes de arte (ej. un color o una forma más) | ✅ Es un cambio de datos en `avatar_catalog.dart`, sin tocar widgets | — |
 
 La regla general para recordar: **la librería termina su trabajo en el
 momento en que te entrega un `AvatarCreatorResult`**. Todo lo que pasa antes
@@ -116,27 +120,35 @@ a `config.onView?.call()` — el primer punto donde el canal se entera de algo.
 
 ### 3. Se pinta la pantalla, conectada al controlador
 
-`build()` envuelve todo con un `ChangeNotifierProvider` que expone el
-controlador a los widgets hijos. De arriba a abajo, la pantalla arma:
+`build()` envuelve todo con un `AvatarCreatorScope` (un `InheritedNotifier`
+propio del paquete, sin depender de `provider` ni de ningún otro paquete de
+gestión de estado externo) que expone el controlador a los widgets hijos. De
+arriba a abajo, la pantalla arma:
 
-1. **`AvatarPreview`** (`lib/src/widgets/avatar_preview.dart`): un cuadrado
-   con el color de fondo elegido (`controller.backgroundColor`) y, encima,
-   un `Stack` con las capas ilustradas seleccionadas
+1. **`AvatarPreview`** (`lib/src/widgets/avatar_preview.dart`): un rectángulo
+   de alto fijo con el color de fondo elegido (`controller.backgroundColor`)
+   y, encima, un `Stack` con las capas ilustradas seleccionadas
    (`controller.layerAssetPaths`), envuelto en un `RepaintBoundary` — esto
    último es clave para el paso de guardado (ver más abajo).
 2. **`AvatarCategoryTabs`** (`lib/src/widgets/avatar_category_tabs.dart`): la
    fila de tabs, uno por categoría del catálogo, resaltando
    `controller.activeCategoryId`.
-3. **`AvatarSectionLabel`**: el título de la categoría activa.
-4. **`AvatarOptionRow`** o **`AvatarOptionGrid`**, según el
-   `AvatarCategoryKind` de la categoría activa: fila (máx. 5, colores) o
-   cuadrícula (máx. 10, capas ilustradas). Cada opción se dibuja con
-   **`AvatarSelectableThumbnail`**, la miniatura cuadrada compartida por
-   ambos.
-5. En `bottomNavigationBar` (fijo, fuera del área con scroll): los botones
-   "Guardar" y, si `config.secondaryButtonEnabled`, "Cancelar".
+3. Según el `AvatarCategoryKind` de la categoría activa:
+   * **`layer`** (Vestuario, Accesorios, Color de fondo): una sola sección,
+     `AvatarSectionLabel` + **`AvatarOptionGrid`** (máx. 10 opciones).
+   * **`layerWithColor`** (Cabello, Rostro): **dos** secciones seguidas — una
+     fila de color (`AvatarOptionRow`, máx. 5) y debajo una cuadrícula de
+     formas (`AvatarOptionGrid`, máx. 10). El color no se "aplica" en tiempo
+     de ejecución: cada combinación de forma + color es un SVG real distinto
+     (ver [assets reales](#assets-reales-el-color-viene-en-el-svg) más abajo).
+     Cada opción, de cualquiera de las dos secciones, se dibuja con
+     **`AvatarSelectableThumbnail`**, la miniatura cuadrada compartida por
+     ambos widgets.
+4. En `bottomNavigationBar` (fijo, fuera del área con scroll): el botón
+   "Guardar". No hay un botón "Cancelar" en el footer — cancelar se hace
+   desde el botón de volver del header.
 
-Todo el contenido de arriba (1 a 4) vive dentro de un único
+Todo el contenido de arriba (1 a 3) vive dentro de un único
 `SingleChildScrollView`, sin ningún `Expanded` — una decisión deliberada para
 evitar un bug real observado en Safari/iOS donde un `Expanded` puede colapsar
 a 0px cuando la barra de direcciones del navegador cambia de tamaño.
@@ -181,23 +193,36 @@ responsabilidad del canal** decidir qué hacer con `resultado.imageBytes` y
 
 ### 6. Cancelar
 
-Al tocar "Cancelar" o el botón de volver del header (`_handleCancel`): se
-llama a `config.onCancel?.call()` y la pantalla simplemente se cierra sin
-devolver ningún resultado. Como el `AvatarCreatorController` de esa sesión se
-destruye junto con la pantalla (`dispose()`), cualquier selección hecha
-durante esa sesión se pierde — el canal nunca llega a enterarse de una
-elección que el usuario no confirmó.
+Al tocar el botón de volver del header (`_handleCancel`; no hay botón
+"Cancelar" en el footer): se llama a `config.onCancel?.call()` y la pantalla
+simplemente se cierra sin devolver ningún resultado. Como el
+`AvatarCreatorController` de esa sesión se destruye junto con la pantalla
+(`dispose()`), cualquier selección hecha durante esa sesión se pierde — el
+canal nunca llega a enterarse de una elección que el usuario no confirmó.
 
-## Estado de los assets
+## Assets reales: el color viene en el SVG
 
-Las categorías de capa (Rostro, Cabello, Vestuario, Accesorios) están
-cableadas hoy al primer asset de muestra entregado por diseño
-(`{categoria}_1.svg`), repetido en varios slots seleccionables como
-placeholder, para que todo el flujo (selección → preview en tiempo real →
-guardado) ya funcione de punta a punta con datos reales. Agregar una
-variante real (por ejemplo `face_2.svg`) es un cambio de datos en
-`lib/src/data/avatar_catalog.dart` — se agrega un `AvatarOption.layer(...)`
-apuntando al nuevo SVG — y no requiere tocar ningún widget ni controlador.
+Vestuario y Accesorios usan SVGs completos e independientes por opción (los
+nombres de archivo son los que exportó Figma, por ejemplo
+`Property 1=3.svg`, `Style=Style4.svg`); no tienen fila de color.
+
+Cabello y Rostro sí la tienen, pero el color **no se aplica en tiempo de
+ejecución** (no hay ningún `ColorFilter` ni tinte): diseño entregó un SVG ya
+coloreado por cada combinación de forma y color (6 formas × 5 colores = 30
+archivos por categoría, con nombres como `Color=3, Expression=5.svg`). Por
+eso el `assetPath` de cada opción de forma en esas dos categorías es en
+realidad una **plantilla** con el marcador `{color}` (por ejemplo,
+`'assets/avatar/hair/Color={color}, Expression=1.svg'`), y
+`AvatarLayerCategory.resolveAssetPath(formaElegida, colorElegido)` sustituye
+ese marcador por el id del color para obtener la ruta real — tanto para la
+capa del preview (`AvatarCreatorController.layerAssetPaths`) como para cada
+miniatura de la cuadrícula (`AvatarOptionGrid.resolveAssetPath`), que por eso
+recalculan su SVG cada vez que cambia el color elegido, no solo la miniatura
+seleccionada.
+
+Agregar una variante real más (una forma o un color adicional) es un cambio
+de datos en `lib/src/data/avatar_catalog.dart` — no requiere tocar ningún
+widget ni controlador.
 
 ## Desarrollo
 

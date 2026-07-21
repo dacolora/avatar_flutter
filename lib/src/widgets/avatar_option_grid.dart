@@ -23,7 +23,7 @@ class AvatarOptionGrid extends StatelessWidget {
     required this.options,
     required this.selectedOptionId,
     required this.onSelected,
-    this.tint,
+    this.resolveAssetPath,
     super.key,
   }) : assert(
           options.length <= 10,
@@ -39,15 +39,17 @@ class AvatarOptionGrid extends StatelessWidget {
   /// Se invoca con el id de la opción que el usuario acaba de tocar.
   final ValueChanged<String> onSelected;
 
-  /// Color con el que se repintan **todas** las miniaturas ilustradas de
-  /// esta cuadrícula (ver [AvatarSelectableThumbnail.tint]). Se usa cuando la
-  /// categoría activa tiene una fila de color asociada
-  /// (ver [AvatarLayerCategory.colorOptions]): así, si el usuario elige
-  /// "morado" en "Color del pelo", los 10 cortes de "Forma del pelo" se ven
-  /// morados de inmediato, sin importar cuál esté seleccionado. Se deja en
+  /// Calcula la ruta real del SVG de cada opción, en vez de usar
+  /// `option.assetPath` directamente. Se usa cuando la categoría activa
+  /// tiene una fila de color asociada (ver
+  /// [AvatarLayerCategory.colorOptions]): ahí, el archivo real de cada forma
+  /// depende también del color elegido en esa fila (por ejemplo,
+  /// `AvatarLayerCategory.resolveAssetPath(option, colorActual)`), así que
+  /// **todas** las miniaturas de la cuadrícula —no solo la seleccionada—
+  /// deben recalcular su ruta cada vez que el color cambia. Se deja en
   /// `null` para categorías sin fila de color (Vestuario, Accesorios, Color
-  /// de fondo), donde cada opción se ve con su color original.
-  final Color? tint;
+  /// de fondo), donde `option.assetPath` ya es la ruta final.
+  final String Function(AvatarOption option)? resolveAssetPath;
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +84,7 @@ class AvatarOptionGrid extends StatelessWidget {
             option: option,
             isSelected: option.id == selectedOptionId,
             onTap: () => onSelected(option.id),
-            tint: tint,
+            assetPathOverride: resolveAssetPath?.call(option),
           );
         },
       ),

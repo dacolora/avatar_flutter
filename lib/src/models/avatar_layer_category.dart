@@ -22,12 +22,17 @@ enum AvatarCategoryKind {
   /// La categoría combina **dos** selectores en la misma pantalla: primero
   /// una fila de colores ([AvatarOptionRow], máximo 5, ver [colorOptions])
   /// y debajo una cuadrícula de formas ilustradas ([AvatarOptionGrid],
-  /// máximo 10, ver [AvatarLayerCategory.options]). El color elegido en la
-  /// fila tiñe **todas** las formas de la cuadrícula (las seleccionadas y
-  /// las que no), para que, por ejemplo, si el usuario elige "morado" en
-  /// "Color del pelo", los 10 cortes de "Forma del pelo" se vean morados
-  /// (ver [AvatarCreatorController.previewLayers] para cómo se aplica ese
-  /// tinte). Hoy la usan Cabello y Rostro (tono de piel + expresión).
+  /// máximo 10, ver [AvatarLayerCategory.options]). Hoy la usan Cabello y
+  /// Rostro (tono de piel + expresión).
+  ///
+  /// El color no se "aplica" a la forma en tiempo de ejecución: el equipo de
+  /// diseño entrega un SVG distinto ya coloreado por cada combinación de
+  /// forma + color (ver [AvatarLayerCategory.resolveAssetPath]), así que
+  /// elegir un color en la fila simplemente hace que se muestre el archivo
+  /// correspondiente a esa combinación — tanto en la forma ya seleccionada
+  /// como en **todas** las demás miniaturas de la cuadrícula, para que, por
+  /// ejemplo, si el usuario elige "morado" en "Color del pelo", los 10
+  /// cortes de "Forma del pelo" se vean morados.
   layerWithColor,
 }
 
@@ -42,7 +47,7 @@ enum AvatarCategoryKind {
 /// 2. El orden en que se apilan (z-index) las capas ilustradas en el
 ///    preview: cada categoría que no sea la de fondo (ver [isBackground])
 ///    se dibuja encima de la anterior (ver
-///    [AvatarCreatorController.previewLayers]).
+///    [AvatarCreatorController.layerAssetPaths]).
 ///
 /// Este orden **no es libre para el canal que consume el widget**: viene
 /// definido por la especificación de diseño de Bancolombia y por eso el
@@ -105,15 +110,23 @@ class AvatarLayerCategory {
   /// fondo), en el orden en que deben mostrarse en la cuadrícula.
   /// `options.first` es la opción preseleccionada por defecto cuando se crea
   /// un avatar nuevo, según las reglas de uso de la especificación.
+  ///
+  /// En categorías de tipo [AvatarCategoryKind.layerWithColor]
+  /// (Cabello, Rostro), el `assetPath` de cada opción de forma es en
+  /// realidad una **plantilla** con el marcador `{color}` (por ejemplo,
+  /// `'assets/avatar/hair/Color={color}, Expression=1.svg'`), porque el
+  /// archivo final depende también del color elegido en [colorOptions]. Usa
+  /// siempre [resolveAssetPath] para obtener la ruta real — nunca leas
+  /// `option.assetPath` directamente en esos casos.
   final List<AvatarOption> options;
 
   /// Opciones de color mostradas en la fila superior, **solo** para
   /// categorías de tipo [AvatarCategoryKind.layerWithColor] (`null` en
   /// cualquier otro caso). El color elegido aquí no reemplaza ninguna de las
   /// [options]: se guarda como una selección independiente (ver
-  /// [AvatarCreatorController.selectColorOption]) y se usa para teñir cada
-  /// forma de la cuadrícula, sin necesidad de tener un SVG por combinación
-  /// de forma+color.
+  /// [AvatarCreatorController.selectColorOption]) y, junto con la forma
+  /// elegida, determina qué archivo real se muestra (ver
+  /// [resolveAssetPath]).
   final List<AvatarOption>? colorOptions;
 
   /// Título visible de la fila de [colorOptions] (por ejemplo, "Color del
@@ -130,7 +143,7 @@ class AvatarLayerCategory {
   /// `true` únicamente en la categoría que representa el color de fondo del
   /// avatar (hoy, "Color de fondo"). Esta bandera es lo que le dice al
   /// controlador que esta categoría **no** debe apilarse como una capa SVG
-  /// más en el preview (ver [AvatarCreatorController.previewLayers]),
+  /// más en el preview (ver [AvatarCreatorController.layerAssetPaths]),
   /// sino que su opción elegida es el color de fondo del lienzo completo
   /// (ver [AvatarCreatorController.backgroundColor]).
   final bool isBackground;
@@ -152,5 +165,25 @@ class AvatarLayerCategory {
     final options = colorOptions;
     if (options == null) return null;
     return options.firstWhere((option) => option.id == optionId, orElse: () => options.first);
+  }
+
+  /// Calcula la ruta real del SVG de [shapeOption] dentro de esta categoría.
+  ///
+  /// En la mayoría de las categorías (Vestuario, Accesorios, Color de fondo)
+  /// cada opción tiene una ruta fija: para esas, este método simplemente
+  /// devuelve `shapeOption.assetPath` sin tocarlo (y [colorOption] se ignora,
+  /// típicamente porque es `null`).
+  ///
+  /// En Cabello y Rostro, en cambio, el color **viene incluido en el propio
+  /// SVG** — el equipo de diseño entrega un archivo distinto por cada
+  /// combinación de forma y color (por ejemplo, `Color=3, Expression=5.svg`)
+  /// — así que `shapeOption.assetPath` es en realidad una plantilla con el
+  /// marcador `{color}` (ver [options]), y este método lo reemplaza por el
+  /// id de [colorOption] (que coincide con el número usado en el nombre del
+  /// archivo, por ejemplo `'3'`).
+  String resolveAssetPath(AvatarOption shapeOption, AvatarOption? colorOption) {
+    final template = shapeOption.assetPath!;
+    if (colorOption == null) return template;
+    return template.replaceFirst('{color}', colorOption.id);
   }
 }

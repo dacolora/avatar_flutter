@@ -24,7 +24,7 @@ class AvatarSelectableThumbnail extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.size,
-    this.tint,
+    this.assetPathOverride,
     super.key,
   });
 
@@ -44,18 +44,19 @@ class AvatarSelectableThumbnail extends StatelessWidget {
   /// el uso de [AspectRatio] más abajo).
   final double? size;
 
-  /// Color con el que se repinta el SVG de esta miniatura, ignorando el
-  /// color que trae el propio archivo. Solo tiene efecto cuando `option` es
-  /// una opción ilustrada (`option.assetPath != null`); en una opción de
-  /// color (`option.color != null`) no se usa, porque ahí la miniatura ya
-  /// muestra el color real de la opción.
+  /// Ruta del SVG a dibujar, si es distinta de `option.assetPath`. Se usa
+  /// para categorías donde el archivo real depende también de un color
+  /// elegido aparte (Cabello, Rostro): ahí `option.assetPath` es solo una
+  /// plantilla (ver [AvatarLayerCategory.options]), y quien construye esta
+  /// miniatura ([AvatarOptionGrid]) le pasa la ruta ya resuelta con
+  /// [AvatarLayerCategory.resolveAssetPath] para el color actualmente
+  /// elegido en esa categoría — así, **todas** las miniaturas de la
+  /// cuadrícula, no solo la seleccionada, reflejan el color elegido en la
+  /// fila de arriba.
   ///
-  /// Lo pasa [AvatarOptionGrid] cuando la categoría activa tiene una fila de
-  /// color asociada (ver [AvatarLayerCategory.colorOptions]): así, **todas**
-  /// las miniaturas de la cuadrícula —no solo la seleccionada— reflejan el
-  /// color elegido en esa fila, sin necesidad de un SVG distinto por cada
-  /// combinación de forma y color.
-  final Color? tint;
+  /// Se ignora por completo en las opciones de color (`option.color !=
+  /// null`), que siempre muestran su propio color real.
+  final String? assetPathOverride;
 
   static const Color _selectedBorderColor = Color(0xFF1B1B1B);
   static const BorderRadius _radius = BorderRadius.all(Radius.circular(24));
@@ -91,17 +92,9 @@ class AvatarSelectableThumbnail extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: SvgPicture.asset(
-                    option.assetPath!,
+                    assetPathOverride ?? option.assetPath!,
                     package: 'avatar_flutter',
                     fit: BoxFit.contain,
-                    // `ColorFilter.mode(color, BlendMode.srcIn)` reemplaza el
-                    // color de cada píxel opaco del SVG por `tint`,
-                    // conservando su forma (su canal alfa) intacta — es la
-                    // forma estándar en Flutter de "repintar" una ilustración
-                    // de un solo color sin tener que editar el archivo SVG.
-                    colorFilter: tint != null
-                        ? ColorFilter.mode(tint!, BlendMode.srcIn)
-                        : null,
                   ),
                 ),
               ),

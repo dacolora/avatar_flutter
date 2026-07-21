@@ -1,6 +1,5 @@
 import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Estas pruebas existen sobre todo para confirmar que, tras quitar la
@@ -62,7 +61,7 @@ void main() {
     expect(find.text('Forma del pelo'), findsWidgets);
   });
 
-  testWidgets('elegir un color de pelo tiñe todas las formas de la cuadrícula', (tester) async {
+  testWidgets('elegir un color de pelo distinto no rompe la pantalla y conserva la forma elegida', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen()),
     );
@@ -71,13 +70,22 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Cabello'));
     await tester.pumpAndSettle();
 
-    // "Morado" es una de las opciones de la fila "Color del pelo".
+    // Elige explícitamente una forma (no la primera), para confirmar que
+    // cambiar el color después no reinicia la forma seleccionada.
+    await tester.tap(find.bySemanticsLabel('Forma de pelo 3'));
+    await tester.pumpAndSettle();
+
+    // "Morado" es una de las opciones de la fila "Color del pelo": cada
+    // color real corresponde a un archivo SVG distinto (ver
+    // AvatarLayerCategory.resolveAssetPath), no a un tinte en tiempo de
+    // ejecución — esta prueba solo confirma que elegirlo no lanza ninguna
+    // excepción y que las dos secciones siguen presentes.
     await tester.tap(find.bySemanticsLabel('Morado'));
     await tester.pumpAndSettle();
 
-    final svgPictures = tester.widgetList<SvgPicture>(find.byType(SvgPicture));
-    // Todas las miniaturas de la cuadrícula (10 formas de pelo) más la capa
-    // de pelo del preview deben quedar teñidas con el mismo color elegido.
-    expect(svgPictures.where((svg) => svg.colorFilter != null).length, greaterThanOrEqualTo(10));
+    expect(tester.takeException(), isNull);
+    expect(find.text('Color del pelo'), findsWidgets);
+    expect(find.text('Forma del pelo'), findsWidgets);
+    expect(find.bySemanticsLabel('Forma de pelo 3'), findsOneWidget);
   });
 }
