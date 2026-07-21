@@ -126,10 +126,13 @@ gestión de estado externo) que expone el controlador a los widgets hijos. De
 arriba a abajo, la pantalla arma:
 
 1. **`AvatarPreview`** (`lib/src/widgets/avatar_preview.dart`): un rectángulo
-   de alto fijo con el color de fondo elegido (`controller.backgroundColor`)
-   y, encima, un `Stack` con las capas ilustradas seleccionadas
-   (`controller.layerAssetPaths`), envuelto en un `RepaintBoundary` — esto
-   último es clave para el paso de guardado (ver más abajo).
+   de alto fijo con un lavado pálido (25% de opacidad) del color de fondo
+   elegido, y centrado dentro, un **círculo** con ese mismo color pero
+   sólido — como un `CircleAvatar` — con un `Stack` de las capas ilustradas
+   seleccionadas encima (`controller.layerAssetPaths`). Solo el círculo
+   (no el rectángulo completo) está envuelto en un `RepaintBoundary`, clave
+   para el paso de guardado (ver más abajo): lo que se guarda es el círculo
+   con el avatar, no el fondo decorativo de la pantalla.
 2. **`AvatarCategoryTabs`** (`lib/src/widgets/avatar_category_tabs.dart`): la
    fila de tabs, uno por categoría del catálogo, resaltando
    `controller.activeCategoryId`.
