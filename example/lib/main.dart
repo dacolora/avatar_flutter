@@ -3,9 +3,18 @@ import 'dart:typed_data';
 import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
 
+/// Punto de entrada de la app de ejemplo. `runApp` es la función de Flutter
+/// que toma un widget raíz y lo pinta en pantalla; todo lo demás en este
+/// archivo describe cómo se ve y se comporta esa app.
 void main() => runApp(const AvatarFlutterExampleApp());
 
-/// App de ejemplo: muestra cómo un canal embebe `avatar_flutter`.
+/// App de ejemplo completa: **esto es código del canal, no de la librería**.
+/// Nada de este archivo se publica dentro del paquete `avatar_flutter` (vive
+/// en `example/`, una convención de los paquetes de Flutter para tener una
+/// app real de demostración); su único propósito es mostrar, con un caso
+/// concreto, cómo una app anfitriona integraría el widget: dónde se guarda la
+/// selección entre sesiones, cómo se usa la imagen resultante, y cómo se
+/// ofrece la entrada al creador de avatar desde una pantalla de perfil.
 class AvatarFlutterExampleApp extends StatelessWidget {
   const AvatarFlutterExampleApp({super.key});
 
@@ -23,6 +32,10 @@ class AvatarFlutterExampleApp extends StatelessWidget {
   }
 }
 
+/// Pantalla de perfil de la app de ejemplo. Representa "la pantalla del
+/// canal" desde la cual normalmente se entra al creador de avatar (según la
+/// especificación, típicamente desde un botón de edición sobre la foto de
+/// perfil).
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -31,9 +44,26 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  /// La imagen del avatar guardada más recientemente. Nótese que esto vive
+  /// **aquí**, en el estado del canal, no dentro de la librería: es
+  /// precisamente la responsabilidad de persistencia que le corresponde al
+  /// canal (en una app real, en vez de guardarla solo en memoria como aquí,
+  /// se subiría a un servidor o se guardaría en disco).
   Uint8List? _avatarImageBytes;
+
+  /// La última selección conocida (`categoryId -> optionId`), para poder
+  /// reabrir el creador con [AvatarCreatorConfig.initialSelection] y que el
+  /// usuario continúe editando desde donde lo dejó, en vez de reiniciar desde
+  /// la selección por defecto cada vez.
   AvatarSelection? _lastSelection;
 
+  /// Abre la pantalla del creador de avatar y reacciona a su resultado.
+  ///
+  /// Este método concentra el ejemplo más claro de la frontera de
+  /// responsabilidades: [AvatarCreatorScreen.push] (la librería) se encarga
+  /// de toda la experiencia de selección y de generar la imagen; en cuanto
+  /// esa función retorna, **todo lo que sigue es código del canal** —
+  /// decidir qué hacer con `result.imageBytes` y `result.selection`.
   Future<void> _openAvatarCreator() async {
     final result = await AvatarCreatorScreen.push(
       context,

@@ -3,10 +3,16 @@ import 'package:provider/provider.dart';
 
 import '../controllers/avatar_creator_controller.dart';
 
-/// #4 (Categorías) + #5 (Card container): tira horizontal de icon-buttons,
-/// uno por categoría, solo uno activo a la vez. Full width, borde inferior
-/// de 1px y gradiente en los bordes para pantallas pequeñas donde el
-/// contenido desborda.
+/// Fila horizontal de tabs de categoría (#4 Categorías + #5 Card container
+/// de la especificación): un botón circular con icono por cada categoría
+/// del catálogo, donde solo uno puede estar activo a la vez.
+///
+/// Es un `StatelessWidget` — es decir, no guarda ningún estado propio —
+/// porque toda la información que necesita (cuáles son las categorías, cuál
+/// está activa) la lee en tiempo real desde el [AvatarCreatorController] con
+/// `context.watch<...>()`. Cuando el usuario toca un tab y el controlador
+/// llama a `notifyListeners()`, este widget se reconstruye automáticamente
+/// con el nuevo tab marcado como activo.
 class AvatarCategoryTabs extends StatelessWidget {
   const AvatarCategoryTabs({super.key});
 
@@ -20,6 +26,16 @@ class AvatarCategoryTabs extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: _dividerColor, width: 1)),
       ),
+      // `ShaderMask` aplica un efecto visual (definido por `shaderCallback`)
+      // sobre su hijo. Aquí se usa para crear el "gradiente de desvanecido"
+      // en los bordes izquierdo y derecho de la fila de tabs: el
+      // `LinearGradient` va de transparente a blanco opaco y de vuelta a
+      // transparente, y `BlendMode.dstIn` hace que ese gradiente controle la
+      // opacidad del contenido de abajo en vez de dibujarse como un color
+      // encima. El resultado es que, cuando hay más tabs de los que caben en
+      // pantalla, los que quedan parcialmente ocultos en los bordes se ven
+      // "desvanecidos" en vez de cortados abruptamente — una pista visual de
+      // que se puede seguir deslizando.
       child: ShaderMask(
         shaderCallback: (bounds) => const LinearGradient(
           begin: Alignment.centerLeft,
@@ -58,6 +74,14 @@ class AvatarCategoryTabs extends StatelessWidget {
   }
 }
 
+/// Un único botón circular de tab, con su icono y su estado
+/// seleccionado/no-seleccionado.
+///
+/// Está declarado como clase privada (el nombre empieza con `_`, una
+/// convención de Dart que hace que solo sea visible dentro de este archivo)
+/// porque no tiene sentido usarlo fuera de [AvatarCategoryTabs]: es un
+/// detalle de implementación de cómo se dibuja cada tab, no una pieza que el
+/// canal necesite instanciar por su cuenta.
 class _CategoryTabButton extends StatelessWidget {
   const _CategoryTabButton({
     required this.isSelected,
@@ -74,6 +98,12 @@ class _CategoryTabButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // `Semantics` no cambia nada visualmente: describe este widget para
+    // tecnologías de accesibilidad (lectores de pantalla como VoiceOver o
+    // TalkBack), indicando que es un botón (`button: true`), si está
+    // seleccionado (`selected: isSelected`) y qué texto debe anunciarse
+    // (`label`). Sin esto, un lector de pantalla solo vería un icono sin
+    // contexto.
     return Semantics(
       button: true,
       selected: isSelected,
