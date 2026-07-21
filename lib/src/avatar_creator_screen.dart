@@ -68,24 +68,8 @@ class AvatarCreatorScreen extends StatefulWidget {
   State<AvatarCreatorScreen> createState() => _AvatarCreatorScreenState();
 }
 
-/// El "estado" de [AvatarCreatorScreen]. En Flutter, un `StatefulWidget` en
-/// sí mismo es inmutable (fíjate que [AvatarCreatorScreen] no tiene ningún
-/// campo mutable); todo lo que puede cambiar con el tiempo — como el
-/// controlador que se crea una sola vez y sobrevive a reconstrucciones — vive
-/// en su clase `State` asociada, que es esta.
 class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
-  /// El controlador de esta sesión de edición. Empieza en `null` porque, si
-  /// [AvatarCreatorConfig.initialSelection] trae un `Future`, hay que
-  /// esperarlo antes de poder construir el controlador (necesita saber la
-  /// selección inicial desde el momento en que se crea). Mientras sea
-  /// `null`, [build] muestra un estado de carga en vez de la pantalla
-  /// completa.
   AvatarCreatorController? _controller;
-
-  /// Error ocurrido al esperar [AvatarCreatorConfig.initialSelection], si lo
-  /// hubo. Mientras no sea `null` y [_controller] siga sin construirse, la
-  /// pantalla muestra un estado de error en vez de quedarse cargando para
-  /// siempre.
   Object? _loadError;
 
   @override
@@ -108,7 +92,8 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
     }
   }
 
-  AvatarCreatorController _buildController(Map<String, String>? initialSelection) {
+  AvatarCreatorController _buildController(
+      Map<String, String>? initialSelection) {
     return AvatarCreatorController(
       categories: widget.config.categories ?? defaultAvatarCatalog(),
       initialSelection: initialSelection,
@@ -136,7 +121,8 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
   /// llamadas síncrona que disparó `initState`/`build`. Por eso, para
   /// cuando este código se ejecuta, el framework ya terminó de construir el
   /// primer frame y `setState` es completamente seguro de llamar.
-  Future<void> _awaitInitialSelection(Future<Map<String, String>> future) async {
+  Future<void> _awaitInitialSelection(
+      Future<Map<String, String>> future) async {
     try {
       final initialSelection = await future;
       if (!mounted) return;
@@ -279,7 +265,8 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                   // Las categorías simples (Vestuario, Accesorios, Color de
                   // fondo) solo muestran la cuadrícula.
                   if (isLayerWithColor) ...[
-                    AvatarSectionLabel(label: activeCategory.colorSectionLabel!),
+                    AvatarSectionLabel(
+                        label: activeCategory.colorSectionLabel!),
                     AvatarOptionRow(
                       options: activeCategory.colorOptions!,
                       selectedOptionId: selectedColorOptionId,
@@ -289,7 +276,8 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                       ),
                     ),
                     AvatarSectionLabel(
-                      label: activeCategory.shapeSectionLabel ?? activeCategory.label,
+                      label: activeCategory.shapeSectionLabel ??
+                          activeCategory.label,
                     ),
                     AvatarOptionGrid(
                       options: activeCategory.options,
@@ -297,7 +285,9 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                       // El color recién elegido en la fila de arriba tiñe
                       // todas las formas de la cuadrícula, seleccionadas o
                       // no — ver [AvatarSelectableThumbnail.tint].
-                      tint: controller.selectedColorOptionFor(activeCategory.id)?.color,
+                      tint: controller
+                          .selectedColorOptionFor(activeCategory.id)
+                          ?.color,
                       onSelected: (optionId) => controller.selectOption(
                         activeCategory.id,
                         optionId,
@@ -332,7 +322,9 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: controller.isSaving ? null : () => _handleSave(controller),
+                    onPressed: controller.isSaving
+                        ? null
+                        : () => _handleSave(controller),
                     child: Text(widget.config.saveButtonText),
                   ),
                 ),

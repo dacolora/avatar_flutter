@@ -44,6 +44,39 @@ import '../models/avatar_option.dart';
 List<AvatarLayerCategory> defaultAvatarCatalog() {
   return [
     _placeholderLayerCategory(
+      id: 'face',
+      label: 'Rostro',
+      icon: Icons.face_outlined,
+      assetPath: 'assets/avatar/face/face_1.svg',
+      optionSemanticPrefix: 'Expresión',
+      shapeSectionLabel: 'Expresión',
+      colorSectionLabel: 'Tono de piel',
+      colorOptions: const [
+        AvatarOption.color(
+            id: 'light',
+            color: Color(0xFFF3D9B1),
+            semanticLabel: 'Tono de piel claro'),
+        AvatarOption.color(
+          id: 'medium-light',
+          color: Color(0xFFE0B589),
+          semanticLabel: 'Tono de piel medio claro',
+        ),
+        AvatarOption.color(
+            id: 'medium',
+            color: Color(0xFFC68642),
+            semanticLabel: 'Tono de piel medio'),
+        AvatarOption.color(
+          id: 'medium-dark',
+          color: Color(0xFF8D5524),
+          semanticLabel: 'Tono de piel medio oscuro',
+        ),
+        AvatarOption.color(
+            id: 'dark',
+            color: Color(0xFF5C3317),
+            semanticLabel: 'Tono de piel oscuro'),
+      ],
+    ),
+    _placeholderLayerCategory(
       id: 'body',
       label: 'Vestuario',
       icon: Icons.checkroom_outlined,
@@ -57,37 +90,19 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
       shapeSectionLabel: 'Forma del pelo',
       colorSectionLabel: 'Color del pelo',
       colorOptions: const [
-        AvatarOption.color(id: 'gray', color: Color(0xFFB8B8BC), semanticLabel: 'Gris'),
-        AvatarOption.color(id: 'black', color: Color(0xFF1B1B1B), semanticLabel: 'Negro'),
-        AvatarOption.color(id: 'yellow', color: Color(0xFFF3D53C), semanticLabel: 'Amarillo'),
-        AvatarOption.color(id: 'purple', color: Color(0xFF6C63D0), semanticLabel: 'Morado'),
-        AvatarOption.color(id: 'orange', color: Color(0xFFE8946B), semanticLabel: 'Naranja'),
+        AvatarOption.color(
+            id: 'gray', color: Color(0xFFB8B8BC), semanticLabel: 'Gris'),
+        AvatarOption.color(
+            id: 'black', color: Color(0xFF1B1B1B), semanticLabel: 'Negro'),
+        AvatarOption.color(
+            id: 'yellow', color: Color(0xFFF3D53C), semanticLabel: 'Amarillo'),
+        AvatarOption.color(
+            id: 'purple', color: Color(0xFF6C63D0), semanticLabel: 'Morado'),
+        AvatarOption.color(
+            id: 'orange', color: Color(0xFFE8946B), semanticLabel: 'Naranja'),
       ],
     ),
-    _placeholderLayerCategory(
-      id: 'face',
-      label: 'Rostro',
-      icon: Icons.face_outlined,
-      assetPath: 'assets/avatar/face/face_1.svg',
-      optionSemanticPrefix: 'Expresión',
-      shapeSectionLabel: 'Expresión',
-      colorSectionLabel: 'Tono de piel',
-      colorOptions: const [
-        AvatarOption.color(id: 'light', color: Color(0xFFF3D9B1), semanticLabel: 'Tono de piel claro'),
-        AvatarOption.color(
-          id: 'medium-light',
-          color: Color(0xFFE0B589),
-          semanticLabel: 'Tono de piel medio claro',
-        ),
-        AvatarOption.color(id: 'medium', color: Color(0xFFC68642), semanticLabel: 'Tono de piel medio'),
-        AvatarOption.color(
-          id: 'medium-dark',
-          color: Color(0xFF8D5524),
-          semanticLabel: 'Tono de piel medio oscuro',
-        ),
-        AvatarOption.color(id: 'dark', color: Color(0xFF5C3317), semanticLabel: 'Tono de piel oscuro'),
-      ],
-    ),
+
     _placeholderLayerCategory(
       id: 'extra',
       label: 'Accesorios',
@@ -107,11 +122,24 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
       kind: AvatarCategoryKind.layer,
       isBackground: true,
       options: const [
-        AvatarOption.color(id: 'green', color: Color(0xFF5FB894), semanticLabel: 'Fondo verde'),
-        AvatarOption.color(id: 'orange', color: Color(0xFFE8946B), semanticLabel: 'Fondo naranja'),
-        AvatarOption.color(id: 'blue', color: Color(0xFF8FC5D6), semanticLabel: 'Fondo azul'),
-        AvatarOption.color(id: 'yellow', color: Color(0xFFF3D53C), semanticLabel: 'Fondo amarillo'),
-        AvatarOption.color(id: 'purple', color: Color(0xFFA48AD4), semanticLabel: 'Fondo morado'),
+        AvatarOption.color(
+            id: 'green',
+            color: Color(0xFF5FB894),
+            semanticLabel: 'Fondo verde'),
+        AvatarOption.color(
+            id: 'orange',
+            color: Color(0xFFE8946B),
+            semanticLabel: 'Fondo naranja'),
+        AvatarOption.color(
+            id: 'blue', color: Color(0xFF8FC5D6), semanticLabel: 'Fondo azul'),
+        AvatarOption.color(
+            id: 'yellow',
+            color: Color(0xFFF3D53C),
+            semanticLabel: 'Fondo amarillo'),
+        AvatarOption.color(
+            id: 'purple',
+            color: Color(0xFFA48AD4),
+            semanticLabel: 'Fondo morado'),
       ],
     ),
   ];
