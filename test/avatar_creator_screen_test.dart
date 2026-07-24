@@ -198,4 +198,178 @@ void main() {
     expect(decoration.color, isNotNull);
     expect(decoration.color!.alpha, 255);
   });
+
+  testWidgets(
+    'AvatarCreatorScreen.push abre la pantalla como una ruta nueva; guardar la cierra y retorna el AvatarCreatorResult',
+    (tester) async {
+      AvatarCreatorResult? capturedResult;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                final result = await AvatarCreatorScreen.push(context);
+                capturedResult = result as AvatarCreatorResult?;
+              },
+              child: const Text('abrir'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('abrir'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AvatarCreatorScreen), findsOneWidget);
+
+      // `controller.save()` captura la imagen con `RenderRepaintBoundary.
+      // toImage()`, que corre en el pipeline real de la engine, no en el
+      // reloj falso que usa `pump()`/`pumpAndSettle()` por defecto. `tap()`
+      // dispara el callback `onPressed` pero no espera a que termine (es
+      // "fire and forget" desde el punto de vista del test), así que
+      // `runAsync` necesita además una espera real (no un `pump`) para darle
+      // tiempo a ese `Future` de completarse de verdad antes de seguir.
+      await tester.runAsync(() async {
+        await tester.tap(find.text('Guardar'));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      // Un `pump()` no basta: la ruta todavía necesita jugar su animación
+      // de salida antes de que el widget realmente desaparezca del árbol.
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AvatarCreatorScreen), findsNothing);
+      expect(capturedResult, isA<AvatarCreatorResult>());
+      expect(capturedResult!.imageBytes, isNotEmpty);
+    },
+  );
+
+  testWidgets(
+    'el botón de volver del header cancela: llama a onCancel y cierra la pantalla sin llamar a onSaveSuccess',
+    (tester) async {
+      var cancelled = false;
+      var saveSucceeded = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => AvatarCreatorScreen.push(
+                context,
+                config: AvatarCreatorConfig(
+                  onCancel: () => cancelled = true,
+                  onSaveSuccess: (_) => saveSucceeded = true,
+                ),
+              ),
+              child: const Text('abrir'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('abrir'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AvatarCreatorScreen), findsNothing);
+      expect(cancelled, isTrue);
+      expect(saveSucceeded, isFalse);
+    },
+  );
+
+  testWidgets(
+    'si onSaveSuccess lanza una excepción, el guardado se trata como fallido: se llama a onSaveError y se muestra un SnackBar, sin cerrar la pantalla',
+    (tester) async {
+      Object? capturedError;
+      final config = AvatarCreatorConfig(
+        onSaveSuccess: (_) => throw Exception('fallo simulado'),
+        onSaveError: (error) => capturedError = error,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: AvatarCreatorScreen(config: config)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.runAsync(() async {
+        await tester.tap(find.text('Guardar'));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pump();
+
+      expect(capturedError, isNotNull);
+      expect(find.text('Algo salió mal al guardar'), findsOneWidget);
+      // La pantalla sigue abierta: un error al guardar no la cierra.
+      expect(find.byType(AvatarCreatorScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'si el Future de initialSelection termina en error, se muestra un mensaje y se llama a onSaveError',
+    (tester) async {
+      Object? capturedError;
+      final failingFuture = Future<Map<String, String>>.delayed(
+        const Duration(milliseconds: 10),
+        () => throw Exception('no se pudo leer la selección guardada'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AvatarCreatorScreen(
+            config: AvatarCreatorConfig(
+              initialSelection: failingFuture,
+              onSaveError: (error) => capturedError = error,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('No fue posible cargar la selección guardada'),
+        findsOneWidget,
+      );
+      expect(capturedError, isNotNull);
+    },
+  );
+
+  testWidgets(
+    'si una categoría layerWithColor no define shapeSectionLabel, el título de la cuadrícula de formas usa category.label',
+    (tester) async {
+      final categories = [
+        AvatarLayerCategory(
+          id: 'hair',
+          label: 'Cabello',
+          icon: Icons.face,
+          kind: AvatarCategoryKind.layerWithColor,
+          colorSectionLabel: 'Color del pelo',
+          // shapeSectionLabel se omite a propósito, para forzar el
+          // fallback a category.label (ver AvatarCreatorScreen.build).
+          options: const [
+            AvatarOption.layer(id: 'hair-1', assetPath: 'assets/avatar/hair/1.svg'),
+          ],
+          colorOptions: const [
+            AvatarOption.color(id: 'gray', color: Colors.grey),
+          ],
+        ),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AvatarCreatorScreen(
+            config: AvatarCreatorConfig(categories: categories),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Color del pelo'), findsWidgets);
+      // Como no hay shapeSectionLabel, el título de la cuadrícula de abajo
+      // cae de vuelta a category.label ("Cabello"), el mismo texto que ya
+      // se usa como etiqueta accesible del tab.
+      expect(find.text('Cabello'), findsWidgets);
+    },
+  );
 }
