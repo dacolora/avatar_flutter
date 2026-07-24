@@ -239,71 +239,111 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
               ),
             ),
             backgroundColor: Colors.white,
-            // Nota importante de diseño: todo el contenido del `body` vive
-            // dentro de un único `SingleChildScrollView`, sin ningún
-            // `Expanded` de por medio. Esto no es una preferencia de estilo:
-            // en pantallas donde la altura disponible varía dinámicamente
-            // (típicamente Safari en iOS, cuando la barra de direcciones se
-            // muestra u oculta al hacer scroll), un `Expanded` que depende
-            // de la altura del `body` de un `Scaffold` puede colapsar
-            // momentáneamente a 0 píxeles de alto, dejando las opciones
-            // invisibles aunque el código sea "correcto" en el resto de
-            // plataformas. Usando un solo scroll para toda la pantalla, el
-            // contenido siempre es alcanzable deslizando el dedo,
-            // independientemente de cuánta altura real haya disponible.
-            body: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AvatarPreview(),
-                  const AvatarCategoryTabs(),
-                  // Las categorías de tipo `layerWithColor` (Cabello, Rostro)
-                  // muestran una sección extra antes de la cuadrícula: la
-                  // fila de color (`colorOptions`), tal como lo pide la
-                  // especificación — ver el comentario de
-                  // [AvatarCategoryKind.layerWithColor]. Las categorías
-                  // simples (Vestuario, Accesorios, Color de fondo) van
-                  // directo a la cuadrícula.
-                  if (isLayerWithColor) ...[
-                    AvatarSectionLabel(
-                        label: activeCategory.colorSectionLabel!),
-                    AvatarOptionRow(
-                      options: activeCategory.colorOptions!,
-                      selectedOptionId: selectedColorOptionId,
-                      onSelected: (optionId) => controller.selectColorOption(
-                        activeCategory.id,
-                        optionId,
-                      ),
-                    ),
-                    AvatarSectionLabel(
-                      label: activeCategory.shapeSectionLabel ??
-                          activeCategory.label,
-                    ),
-                  ] else
-                    AvatarSectionLabel(label: activeCategory.label),
-                  AvatarOptionGrid(
-                    options: activeCategory.options,
-                    selectedOptionId: selectedOptionId,
-                    // `resolveAssetPath` combina la forma de cada opción con
-                    // el color actualmente elegido en esta categoría (si
-                    // tiene uno, ver [AvatarLayerCategory.colorOptions]).
-                    // Para categorías sin fila de color,
-                    // `selectedColorOptionFor` devuelve `null` y
-                    // `resolveAssetPath` simplemente deja `option.assetPath`
-                    // intacto — por eso este mismo callback sirve para
-                    // ambos casos.
-                    resolveAssetPath: (option) => activeCategory.resolveAssetPath(
-                      option,
-                      controller.selectedColorOptionFor(activeCategory.id),
-                    ),
-                    onSelected: (optionId) => controller.selectOption(
-                      activeCategory.id,
-                      optionId,
-                    ),
+            // El `body` se arma con tres slivers dentro de un
+            // `CustomScrollView`, para lograr el comportamiento de scroll
+            // que pide la especificación:
+            //
+            // 1. El preview: un `SliverPersistentHeader` fijo (`pinned:
+            //    true`) que se va encogiendo a medida que el usuario baja
+            //    (sin llegar nunca a desaparecer del todo) y vuelve a
+            //    expandirse al subir — ver [AvatarPreview.expansion].
+            // 2. Los tabs de categoría: otro `SliverPersistentHeader` fijo,
+            //    pero de alto constante (`minExtent == maxExtent`), así que
+            //    no se encoge — solo queda pegado justo debajo del preview,
+            //    sin importar cuánto se haya scrolleado.
+            // 3. El resto (etiqueta de sección + opciones): un
+            //    `SliverToBoxAdapter` normal, que es la única parte que en
+            //    verdad se desplaza fuera de la pantalla al hacer scroll.
+            //
+            // Igual que con el `SingleChildScrollView` que se usaba antes,
+            // esto sigue evitando cualquier `Expanded`: un `CustomScrollView`
+            // como `body` de un `Scaffold` simplemente ocupa la altura que
+            // le den (aunque esa altura fluctúe momentáneamente, como pasa
+            // en Safari/iOS cuando la barra de direcciones aparece u
+            // desaparece), sin que ninguno de sus slivers deba repartirse
+            // una porción fija de esa altura y arriesgarse a colapsar a
+            // 0px — el contenido siempre sigue siendo alcanzable con
+            // scroll, sin importar la altura real disponible en cada
+            // momento.
+            body: CustomScrollView(
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SliverHeaderDelegate(
+                    minExtent: AvatarPreview.collapsedHeight,
+                    maxExtent: AvatarPreview.expandedHeight,
+                    builder: (context, shrinkOffset) {
+                      const range =
+                          AvatarPreview.expandedHeight - AvatarPreview.collapsedHeight;
+                      final expansion = 1 - (shrinkOffset / range).clamp(0.0, 1.0);
+                      return AvatarPreview(expansion: expansion);
+                    },
                   ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SliverHeaderDelegate(
+                    minExtent: AvatarCategoryTabs.height,
+                    maxExtent: AvatarCategoryTabs.height,
+                    builder: (context, shrinkOffset) => const AvatarCategoryTabs(),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Las categorías de tipo `layerWithColor` (Cabello,
+                      // Rostro) muestran una sección extra antes de la
+                      // cuadrícula: la fila de color (`colorOptions`), tal
+                      // como lo pide la especificación — ver el comentario
+                      // de [AvatarCategoryKind.layerWithColor]. Las
+                      // categorías simples (Vestuario, Accesorios, Color de
+                      // fondo) van directo a la cuadrícula.
+                      if (isLayerWithColor) ...[
+                        AvatarSectionLabel(
+                            label: activeCategory.colorSectionLabel!),
+                        AvatarOptionRow(
+                          options: activeCategory.colorOptions!,
+                          selectedOptionId: selectedColorOptionId,
+                          onSelected: (optionId) =>
+                              controller.selectColorOption(
+                            activeCategory.id,
+                            optionId,
+                          ),
+                        ),
+                        AvatarSectionLabel(
+                          label: activeCategory.shapeSectionLabel ??
+                              activeCategory.label,
+                        ),
+                      ] else
+                        AvatarSectionLabel(label: activeCategory.label),
+                      AvatarOptionGrid(
+                        options: activeCategory.options,
+                        selectedOptionId: selectedOptionId,
+                        // `resolveAssetPath` combina la forma de cada
+                        // opción con el color actualmente elegido en esta
+                        // categoría (si tiene uno, ver
+                        // [AvatarLayerCategory.colorOptions]). Para
+                        // categorías sin fila de color,
+                        // `selectedColorOptionFor` devuelve `null` y
+                        // `resolveAssetPath` simplemente deja
+                        // `option.assetPath` intacto — por eso este mismo
+                        // callback sirve para ambos casos.
+                        resolveAssetPath: (option) =>
+                            activeCategory.resolveAssetPath(
+                          option,
+                          controller.selectedColorOptionFor(activeCategory.id),
+                        ),
+                        onSelected: (optionId) => controller.selectOption(
+                          activeCategory.id,
+                          optionId,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ],
             ),
             // El pie de botones se ubica en `bottomNavigationBar` (en vez de
             // como último elemento dentro del `body`) precisamente para que
@@ -332,4 +372,66 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
       ),
     );
   }
+}
+
+/// Firma del `builder` de [_SliverHeaderDelegate]: recibe cuánto se ha
+/// "encogido" el header (0 = totalmente expandido, en su [maxExtent];
+/// [_SliverHeaderDelegate.maxExtent] menos [_SliverHeaderDelegate.minExtent]
+/// = totalmente encogido) y devuelve el widget a mostrar en ese punto.
+typedef _SliverHeaderBuilder = Widget Function(
+  BuildContext context,
+  double shrinkOffset,
+);
+
+/// Adapta cualquier widget para usarlo como header fijo (`pinned`) dentro de
+/// un `CustomScrollView`, sin tener que escribir una subclase de
+/// `SliverPersistentHeaderDelegate` por cada header — [AvatarCreatorScreen]
+/// la usa dos veces: una para el preview (que sí se encoge,
+/// `minExtent != maxExtent`) y otra para los tabs de categoría (que no se
+/// encogen, `minExtent == maxExtent`).
+///
+/// ### ¿Qué hace un `SliverPersistentHeaderDelegate`?
+/// Es la pieza que un `SliverPersistentHeader` necesita para saber, en todo
+/// momento del scroll, qué tan alto debe medir su contenido y qué dibujar
+/// en ese alto. Flutter llama a [build] en cada frame relevante del scroll,
+/// pasándole `shrinkOffset` — cuántos píxeles del [maxExtent] original ya
+/// se "comió" el scroll — para que el `builder` decida cómo verse en ese
+/// punto exacto (en este archivo, [AvatarPreview] usa ese valor para
+/// calcular su propio nivel de "expansión", ver
+/// [AvatarPreview.expansion]). Con `pinned: true` en el `SliverPersistentHeader`
+/// que lo usa, el header nunca se desplaza fuera de la pantalla: como
+/// mucho, se encoge hasta [minExtent] y se queda ahí, fijo, mientras el
+/// resto del contenido sigue haciendo scroll por debajo.
+class _SliverHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _SliverHeaderDelegate({
+    required this.minExtent,
+    required this.maxExtent,
+    required this.builder,
+  });
+
+  @override
+  final double minExtent;
+
+  @override
+  final double maxExtent;
+
+  final _SliverHeaderBuilder builder;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return builder(context, shrinkOffset);
+  }
+
+  /// Le dice a Flutter si debe volver a llamar a [build] cuando el
+  /// `SliverPersistentHeader` que usa este delegate se reconstruye con una
+  /// instancia nueva (por ejemplo, cada vez que el usuario elige una
+  /// opción distinta y `AvatarCreatorScreen` se reconstruye). Siempre
+  /// devuelve `true`: como [builder] se crea de nuevo en cada
+  /// reconstrucción de la pantalla (no hay forma barata de comparar "¿el
+  /// contenido que produce cambió?"), la opción segura es asumir que sí
+  /// pudo cambiar. El costo de reconstruir de más un header pequeño es
+  /// insignificante comparado con el riesgo de dejar el preview o los tabs
+  /// mostrando una selección vieja.
+  @override
+  bool shouldRebuild(covariant _SliverHeaderDelegate oldDelegate) => true;
 }

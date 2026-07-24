@@ -1,4 +1,5 @@
 import 'package:avatar_flutter/avatar_flutter.dart';
+import 'package:avatar_flutter/src/widgets/avatar_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -71,8 +72,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // Elige explícitamente una forma (no la primera), para confirmar que
-    // cambiar el color después no reinicia la forma seleccionada.
-    await tester.tap(find.bySemanticsLabel('Forma de pelo 3'));
+    // cambiar el color después no reinicia la forma elegida. El body (a
+    // diferencia del preview y los tabs) es la parte que de verdad se
+    // desplaza con el scroll, así que primero hay que asegurarse de que la
+    // opción esté a la vista antes de tocarla.
+    final shape3 = find.bySemanticsLabel('Forma de pelo 3');
+    await tester.ensureVisible(shape3);
+    await tester.pumpAndSettle();
+    await tester.tap(shape3);
     await tester.pumpAndSettle();
 
     // "Morado" es una de las opciones de la fila "Color del pelo": cada
@@ -80,7 +87,10 @@ void main() {
     // AvatarLayerCategory.resolveAssetPath), no a un tinte en tiempo de
     // ejecución — esta prueba solo confirma que elegirlo no lanza ninguna
     // excepción y que las dos secciones siguen presentes.
-    await tester.tap(find.bySemanticsLabel('Morado'));
+    final purple = find.bySemanticsLabel('Morado');
+    await tester.ensureVisible(purple);
+    await tester.pumpAndSettle();
+    await tester.tap(purple);
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
@@ -113,5 +123,38 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.bySemanticsLabel('Sin accesorios'), findsOneWidget);
+  });
+
+  testWidgets('al hacer scroll, el preview se encoge (sin desaparecer) y los tabs de categoría siguen tocables', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: AvatarCreatorScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    // Alto inicial del preview: totalmente expandido.
+    final expandedSize = tester.getSize(find.byType(AvatarPreview));
+    expect(expandedSize.height, AvatarPreview.expandedHeight);
+
+    // Un scroll grande hacia abajo debe alcanzar el mínimo de encogimiento
+    // del preview (no puede seguir bajando más que eso), pero nunca debe
+    // llegar a 0 ni desaparecer del árbol de widgets.
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
+
+    final collapsedSize = tester.getSize(find.byType(AvatarPreview));
+    expect(collapsedSize.height, AvatarPreview.collapsedHeight);
+    expect(find.byType(AvatarPreview), findsOneWidget);
+
+    // Los tabs de categoría siguen debajo del preview y se pueden seguir
+    // tocando aunque el body esté scrolleado.
+    await tester.tap(find.bySemanticsLabel('Cabello'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Color del pelo'), findsWidgets);
+
+    // Al volver a subir el scroll, el preview se expande de nuevo.
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 1000));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(AvatarPreview)).height, AvatarPreview.expandedHeight);
   });
 }

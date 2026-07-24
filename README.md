@@ -126,16 +126,19 @@ gestión de estado externo) que expone el controlador a los widgets hijos. De
 arriba a abajo, la pantalla arma:
 
 1. **`AvatarPreview`** (`lib/src/widgets/avatar_preview.dart`): un rectángulo
-   de alto fijo con un lavado pálido (25% de opacidad) del color de fondo
-   elegido, y centrado dentro, un **círculo** con ese mismo color pero
-   sólido — como un `CircleAvatar` — con un `Stack` de las capas ilustradas
-   seleccionadas encima (`controller.layerAssetPaths`). Solo el círculo
-   (no el rectángulo completo) está envuelto en un `RepaintBoundary`, clave
-   para el paso de guardado (ver más abajo): lo que se guarda es el círculo
-   con el avatar, no el fondo decorativo de la pantalla.
+   con un lavado pálido (25% de opacidad) del color de fondo elegido, y
+   centrado dentro, un **círculo** con ese mismo color pero sólido — como un
+   `CircleAvatar` — con un `Stack` de las capas ilustradas seleccionadas
+   encima (`controller.layerAssetPaths`). Solo el círculo (no el rectángulo
+   completo) está envuelto en un `RepaintBoundary`, clave para el paso de
+   guardado (ver más abajo): lo que se guarda es el círculo con el avatar,
+   no el fondo decorativo de la pantalla. Este rectángulo **se encoge** al
+   hacer scroll — ver la sección de [scroll](#scroll-preview-que-se-encoge-tabs-fijos-body-que-se-desplaza) más abajo.
 2. **`AvatarCategoryTabs`** (`lib/src/widgets/avatar_category_tabs.dart`): la
    fila de tabs, uno por categoría del catálogo, resaltando
-   `controller.activeCategoryId`.
+   `controller.activeCategoryId`. A diferencia del preview, esta fila
+   **no** se encoge: mantiene siempre el mismo alto
+   (`AvatarCategoryTabs.height`).
 3. Según el `AvatarCategoryKind` de la categoría activa:
    * **`layer`** (Vestuario, Accesorios, Color de fondo): una sola sección,
      `AvatarSectionLabel` + **`AvatarOptionGrid`** (máx. 10 opciones).
@@ -151,10 +154,46 @@ arriba a abajo, la pantalla arma:
    "Guardar". No hay un botón "Cancelar" en el footer — cancelar se hace
    desde el botón de volver del header.
 
-Todo el contenido de arriba (1 a 3) vive dentro de un único
-`SingleChildScrollView`, sin ningún `Expanded` — una decisión deliberada para
-evitar un bug real observado en Safari/iOS donde un `Expanded` puede colapsar
-a 0px cuando la barra de direcciones del navegador cambia de tamaño.
+## Scroll: preview que se encoge, tabs fijos, body que se desplaza
+
+El `body` de la pantalla es un `CustomScrollView` con tres slivers, para
+lograr un comportamiento de scroll específico:
+
+1. **El preview se encoge, pero nunca desaparece.** Es un
+   `SliverPersistentHeader` con `pinned: true` cuyo alto va de
+   `AvatarPreview.expandedHeight` (249, arriba del todo) a
+   `AvatarPreview.collapsedHeight` (96, el mínimo) a medida que el usuario
+   hace scroll hacia abajo, y vuelve a expandirse al subir — nunca llega a
+   ocultarse del todo. `AvatarPreview` recibe ese progreso como un valor
+   `expansion` entre `0` (encogido) y `1` (expandido) y lo usa para
+   interpolar tanto su alto como el diámetro del círculo, sin animación:
+   como `expansion` cambia en cada frame de scroll, animarlo produciría un
+   desfase entre el dedo y el preview.
+2. **Los tabs de categoría quedan siempre fijos, justo debajo del preview.**
+   Es otro `SliverPersistentHeader` con `pinned: true`, pero con
+   `minExtent == maxExtent` (`AvatarCategoryTabs.height`): no se encoge, y
+   como está `pinned`, tampoco se desplaza fuera de la pantalla — sea cual
+   sea la posición del scroll, los tabs siempre están a la vista y son
+   tocables.
+3. **El resto del contenido** (etiqueta de sección + fila de color/cuadrícula
+   de formas) va en un `SliverToBoxAdapter` normal: es la única parte que
+   en verdad se desplaza fuera de la pantalla al hacer scroll — de ahí el
+   nombre de esta sección: "el scroll es del body de cada categoría", no de
+   toda la pantalla.
+
+Ambos headers usan el mismo delegate reutilizable
+(`_SliverHeaderDelegate`, privado de `avatar_creator_screen.dart`), que
+adapta cualquier widget a la interfaz que pide `SliverPersistentHeader`
+sin tener que escribir una subclase por header.
+
+Igual que con el `SingleChildScrollView` que se usaba antes de este
+rediseño, esto sigue evitando cualquier `Expanded`: un `CustomScrollView`
+como `body` de un `Scaffold` simplemente ocupa la altura que le den (aunque
+esa altura fluctúe momentáneamente, como pasa en Safari/iOS cuando la barra
+de direcciones aparece o desaparece), sin que ninguno de sus slivers deba
+repartirse una porción fija de esa altura y arriesgarse a colapsar a 0px —
+el contenido siempre sigue siendo alcanzable con scroll, sin importar la
+altura real disponible en cada momento.
 
 ### 4. El usuario interactúa
 

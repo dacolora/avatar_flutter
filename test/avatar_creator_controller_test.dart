@@ -167,12 +167,12 @@ void main() {
     });
 
     test('resolveAssetPath returns null for an AvatarOption.none', () {
-      const category = AvatarLayerCategory(
+      final category = AvatarLayerCategory(
         id: 'extra',
         label: 'Accesorios',
         icon: Icons.circle,
         kind: AvatarCategoryKind.layer,
-        options: [
+        options: const [
           AvatarOption.none(id: 'none', semanticLabel: 'Sin accesorios'),
           AvatarOption.layer(id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
         ],
@@ -184,12 +184,12 @@ void main() {
     test('a category whose default option is AvatarOption.none contributes no layer until a real style is chosen', () {
       final categoriesWithOptionalExtra = [
         ...categories,
-        const AvatarLayerCategory(
+        AvatarLayerCategory(
           id: 'extra',
           label: 'Accesorios',
           icon: Icons.circle,
           kind: AvatarCategoryKind.layer,
-          options: [
+          options: const [
             AvatarOption.none(id: 'none', semanticLabel: 'Sin accesorios'),
             AvatarOption.layer(id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
           ],

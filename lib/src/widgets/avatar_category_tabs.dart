@@ -17,6 +17,16 @@ class AvatarCategoryTabs extends StatelessWidget {
 
   static const Color _dividerColor = Color(0xFFD9DADD); // token border/default
 
+  /// Alto total y fijo de esta fila: los 48px del botón circular de cada
+  /// tab, más los 8px de padding vertical arriba y abajo (16 en total), más
+  /// el 1px del borde inferior. [AvatarCreatorScreen] necesita conocer este
+  /// número de antemano (no puede medirlo después de construir el widget)
+  /// para reservarle ese espacio fijo en el `SliverPersistentHeader` que lo
+  /// mantiene siempre visible debajo del preview — ver el comentario de esa
+  /// clase sobre por qué los tabs no se encogen ni se ocultan con el
+  /// scroll, a diferencia del preview.
+  static const double height = 48 + 8 + 8 + 1;
+
   @override
   Widget build(BuildContext context) {
     final controller = AvatarCreatorScope.of(context);
