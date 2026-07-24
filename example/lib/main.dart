@@ -96,6 +96,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context,
       config: AvatarCreatorConfig(
         initialSelection: _loadSavedSelection(),
+        // El canal puede personalizar los altos del preview (por ejemplo,
+        // si su propio header ya ocupa espacio y necesita uno más chico).
+        // Si se omiten estos dos, la librería usa 249/160 por defecto.
+        previewExpandedHeight: 249,
+        previewCollapsedHeight: 160,
         // Hooks de tagueo sugeridos: el canal decide si/cómo los envía.
         onView: () =>
             debugPrint('tag: ${AvatarAnalyticsEvents.avatarCreatorView}'),

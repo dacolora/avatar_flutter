@@ -9,10 +9,9 @@ import 'avatar_layer_category.dart';
 /// Esta clase es, en la práctica, **el contrato entre la librería y el
 /// canal**: todo lo que el canal puede influir sin tener que tocar el
 /// código interno del paquete pasa por aquí. Todo lo que *no* está en esta
-/// clase (por ejemplo, el orden de las categorías, cómo se ve cada tab, o
-/// el diseño del preview) está fijado por la librería a propósito, porque
-/// forma parte de la especificación de diseño de Bancolombia y no debe
-/// variar entre canales.
+/// clase (por ejemplo, el orden de las categorías o cómo se ve cada tab)
+/// está fijado por la librería a propósito, porque forma parte de la
+/// especificación de diseño de Bancolombia y no debe variar entre canales.
 ///
 /// Se marca con `@immutable` (una anotación informativa de Flutter, no una
 /// palabra clave del lenguaje) para documentar la intención de que, una vez
@@ -34,12 +33,17 @@ class AvatarCreatorConfig {
     this.title = 'Crear avatar',
     this.backButtonLabel = '',
     this.saveButtonText = 'Guardar',
+    this.previewExpandedHeight = 249,
+    this.previewCollapsedHeight = 160,
     this.onView,
     this.onSave,
     this.onSaveSuccess,
     this.onSaveError,
     this.onCancel,
-  });
+  }) : assert(
+          previewCollapsedHeight <= previewExpandedHeight,
+          'previewCollapsedHeight no puede ser mayor que previewExpandedHeight',
+        );
 
   /// Catálogo de categorías a usar. Si se deja en `null` (el caso normal),
   /// la pantalla usa [defaultAvatarCatalog], el catálogo oficial definido
@@ -98,6 +102,21 @@ class AvatarCreatorConfig {
   /// footer ya no tiene un botón "Cancelar" propio — cancelar se hace desde
   /// el botón de volver del header (ver [onCancel]).
   final String saveButtonText;
+
+  /// Alto del preview (el círculo con el avatar + el lavado pálido de
+  /// alrededor) cuando está totalmente expandido, es decir, con la pantalla
+  /// arriba del todo (249 por defecto). El canal puede darle otro valor si
+  /// su diseño necesita un preview más grande o más chico — ver
+  /// `example/lib/main.dart` para un ejemplo de cómo personalizarlo.
+  final double previewExpandedHeight;
+
+  /// Alto mínimo del preview una vez el usuario hace scroll hacia abajo del
+  /// todo (160 por defecto). El preview nunca desaparece por completo:
+  /// se encoge desde [previewExpandedHeight] hasta este valor, y se vuelve
+  /// a expandir en cuanto el usuario sube de nuevo. Debe ser menor o igual
+  /// a [previewExpandedHeight] (si son iguales, el preview simplemente no
+  /// se encoge).
+  final double previewCollapsedHeight;
 
   /// ### Callbacks: el punto de extensión principal de la librería
   ///

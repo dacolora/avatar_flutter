@@ -11,37 +11,51 @@ import '../controllers/avatar_creator_scope.dart';
 /// Según la especificación de diseño, el avatar en sí (el color de fondo +
 /// las capas) vive dentro de un **círculo** (como un [CircleAvatar])
 /// centrado en el área de preview. Fuera de ese círculo, pero dentro del
-/// rectángulo del preview, el fondo no es blanco ni transparente: es el
-/// mismo color de fondo elegido, pero con baja opacidad — un lavado pálido
-/// que separa visualmente "el avatar" del resto de la pantalla sin usar un
-/// color distinto ni un borde.
+/// rectángulo del preview, el fondo no es blanco: es un tono **pálido** del
+/// mismo color de fondo elegido (una mezcla con blanco, no transparencia
+/// real — ver la nota en [build] sobre por qué) que separa visualmente "el
+/// avatar" del resto de la pantalla sin usar un color distinto ni un borde.
 ///
 /// Este widget no controla su propio tamaño: lo recibe desde afuera con
-/// [expansion] (ver [AvatarCreatorScreen], que lo envuelve en un
-/// `SliverPersistentHeader` que encoge el preview a medida que el usuario
-/// hace scroll hacia abajo, sin llegar nunca a ocultarlo del todo, y lo
-/// vuelve a expandir al volver arriba).
+/// [expandedHeight], [collapsedHeight] y [expansion] (ver
+/// [AvatarCreatorScreen], que lo envuelve en un `SliverPersistentHeader` que
+/// encoge el preview a medida que el usuario hace scroll hacia abajo, sin
+/// llegar nunca a ocultarlo del todo, y lo vuelve a expandir al volver
+/// arriba). Los dos altos vienen, en última instancia, de
+/// [AvatarCreatorConfig.previewExpandedHeight] y
+/// [AvatarCreatorConfig.previewCollapsedHeight] — el canal puede
+/// personalizarlos; esta clase solo sabe interpolar entre los valores que le
+/// dan, no tiene una opinión propia sobre cuáles deberían ser.
 class AvatarPreview extends StatelessWidget {
-  const AvatarPreview({this.expansion = 1, super.key});
+  const AvatarPreview({
+    required this.expandedHeight,
+    required this.collapsedHeight,
+    this.expansion = 1,
+    super.key,
+  });
 
-  /// Qué tan "expandido" está el preview: `1` es el tamaño completo
-  /// ([expandedHeight]/[expandedCircleDiameter]), `0` es el tamaño mínimo
-  /// ([collapsedHeight]/[collapsedCircleDiameter]), y cualquier valor
-  /// intermedio interpola linealmente entre ambos — así el preview puede
-  /// seguir el scroll fielmente, sin saltos, en vez de animar hacia un
-  /// tamaño fijo.
+  /// Alto del preview totalmente expandido (al tope de la pantalla). Ver
+  /// [AvatarCreatorConfig.previewExpandedHeight].
+  final double expandedHeight;
+
+  /// Alto mínimo del preview una vez encogido del todo por el scroll: nunca
+  /// desaparece, solo se reduce hasta este tamaño. Ver
+  /// [AvatarCreatorConfig.previewCollapsedHeight].
+  final double collapsedHeight;
+
+  /// Qué tan "expandido" está el preview: `1` es [expandedHeight], `0` es
+  /// [collapsedHeight], y cualquier valor intermedio interpola linealmente
+  /// entre ambos — así el preview puede seguir el scroll fielmente, sin
+  /// saltos, en vez de animar hacia un tamaño fijo.
   final double expansion;
 
-  /// Alto del preview totalmente expandido (al tope de la pantalla).
-  static const double expandedHeight = 249;
-
-  /// Alto mínimo del preview una vez encogido del todo: nunca desaparece
-  /// por completo, solo se reduce hasta este tamaño (ver la clase 1 del
-  /// comportamiento de scroll pedido: "el preview no desaparece del todo").
-  static const double collapsedHeight = 96;
-
-  static const double _expandedCircleDiameter = 200;
-  static const double _collapsedCircleDiameter = 64;
+  /// Proporción entre el diámetro del círculo y el alto total del preview
+  /// (en cualquiera de los dos extremos, expandido o encogido): con el
+  /// valor por defecto de altos (249 expandido, 160 encogido) da un círculo
+  /// de 200 y 128 respectivamente. Se expresa como proporción, no como un
+  /// tamaño fijo, para que el círculo se vea bien proporcionado sin importar
+  /// qué altos configure el canal.
+  static const double _circleToHeightRatio = 0.8;
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +69,7 @@ class AvatarPreview extends StatelessWidget {
 
     final clampedExpansion = expansion.clamp(0.0, 1.0);
     final height = lerpDouble(collapsedHeight, expandedHeight, clampedExpansion);
-    final circleDiameter = lerpDouble(
-      _collapsedCircleDiameter,
-      _expandedCircleDiameter,
-      clampedExpansion,
-    );
+    final circleDiameter = height * _circleToHeightRatio;
 
     // El alto y el diámetro del círculo se fijan directamente a partir de
     // `expansion` (sin `AnimatedContainer`/`AnimatedSize`): como
@@ -73,11 +83,17 @@ class AvatarPreview extends StatelessWidget {
       height: height,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        // El lavado pálido "fuera" del círculo: el mismo color, pero con
-        // solo un 25% de opacidad — por eso se ve como un tono
-        // suave/difuminado del color de fondo en vez del color sólido que
-        // sí lleva el círculo.
-        color: backgroundColor.withOpacity(0.25),
+        // El lavado pálido "fuera" del círculo: en vez de aplicar
+        // opacidad real (`backgroundColor.withOpacity(...)`, que dejaría
+        // ver — literalmente — lo que hay detrás), se mezcla el color de
+        // fondo con blanco en un 25%. El resultado se ve igual de "pálido"
+        // que la opacidad (matemáticamente es el mismo color, ya que este
+        // preview siempre estuvo sobre un fondo blanco), pero es un color
+        // sólido y opaco. Eso importa porque este preview vive en un
+        // `SliverPersistentHeader` fijo, con contenido scrolleable
+        // pasando por detrás: con opacidad real, ese contenido se vería
+        // "a través" del preview en vez de quedar tapado por él.
+        color: Color.lerp(Colors.white, backgroundColor, 0.25),
         child: Center(
           // `RepaintBoundary` aísla esta parte del árbol para que Flutter
           // pueda redibujarla de forma independiente del resto de la

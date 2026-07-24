@@ -270,13 +270,22 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _SliverHeaderDelegate(
-                    minExtent: AvatarPreview.collapsedHeight,
-                    maxExtent: AvatarPreview.expandedHeight,
+                    minExtent: widget.config.previewCollapsedHeight,
+                    maxExtent: widget.config.previewExpandedHeight,
                     builder: (context, shrinkOffset) {
-                      const range =
-                          AvatarPreview.expandedHeight - AvatarPreview.collapsedHeight;
-                      final expansion = 1 - (shrinkOffset / range).clamp(0.0, 1.0);
-                      return AvatarPreview(expansion: expansion);
+                      final range = widget.config.previewExpandedHeight -
+                          widget.config.previewCollapsedHeight;
+                      // Si el canal configura el mismo alto para ambos
+                      // extremos, `range` es 0 — se trata como "sin
+                      // encogimiento" en vez de dividir por cero.
+                      final expansion = range <= 0
+                          ? 1.0
+                          : 1 - (shrinkOffset / range).clamp(0.0, 1.0);
+                      return AvatarPreview(
+                        expandedHeight: widget.config.previewExpandedHeight,
+                        collapsedHeight: widget.config.previewCollapsedHeight,
+                        expansion: expansion,
+                      );
                     },
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:avatar_flutter/avatar_flutter.dart';
+import 'package:avatar_flutter/src/widgets/avatar_category_tabs.dart';
 import 'package:avatar_flutter/src/widgets/avatar_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,14 +127,15 @@ void main() {
   });
 
   testWidgets('al hacer scroll, el preview se encoge (sin desaparecer) y los tabs de categoría siguen tocables', (tester) async {
+    const config = AvatarCreatorConfig();
     await tester.pumpWidget(
-      const MaterialApp(home: AvatarCreatorScreen()),
+      const MaterialApp(home: AvatarCreatorScreen(config: config)),
     );
     await tester.pumpAndSettle();
 
     // Alto inicial del preview: totalmente expandido.
     final expandedSize = tester.getSize(find.byType(AvatarPreview));
-    expect(expandedSize.height, AvatarPreview.expandedHeight);
+    expect(expandedSize.height, config.previewExpandedHeight);
 
     // Un scroll grande hacia abajo debe alcanzar el mínimo de encogimiento
     // del preview (no puede seguir bajando más que eso), pero nunca debe
@@ -142,7 +144,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final collapsedSize = tester.getSize(find.byType(AvatarPreview));
-    expect(collapsedSize.height, AvatarPreview.collapsedHeight);
+    expect(collapsedSize.height, config.previewCollapsedHeight);
     expect(find.byType(AvatarPreview), findsOneWidget);
 
     // Los tabs de categoría siguen debajo del preview y se pueden seguir
@@ -155,6 +157,45 @@ void main() {
     // Al volver a subir el scroll, el preview se expande de nuevo.
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 1000));
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(AvatarPreview)).height, AvatarPreview.expandedHeight);
+    expect(tester.getSize(find.byType(AvatarPreview)).height, config.previewExpandedHeight);
+  });
+
+  testWidgets('el canal puede personalizar los altos expandido/encogido del preview', (tester) async {
+    const config = AvatarCreatorConfig(
+      previewExpandedHeight: 300,
+      previewCollapsedHeight: 120,
+    );
+    await tester.pumpWidget(
+      const MaterialApp(home: AvatarCreatorScreen(config: config)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(find.byType(AvatarPreview)).height, 300);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(find.byType(AvatarPreview)).height, 120);
+  });
+
+  testWidgets('los tabs de categoría tienen fondo opaco (regresión: el body scrolleado se veía "a través" de ellos)', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: AvatarCreatorScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    // AvatarCategoryTabs anida más de un Container (el contenedor exterior
+    // con el fondo, y uno por cada botón de tab): el primero en el árbol es
+    // siempre el exterior, que es el que debe tener el fondo opaco.
+    final tabsContainer = tester.widget<Container>(
+      find.descendant(
+        of: find.byType(AvatarCategoryTabs),
+        matching: find.byType(Container),
+      ).first,
+    );
+    final decoration = tabsContainer.decoration as BoxDecoration;
+
+    expect(decoration.color, isNotNull);
+    expect(decoration.color!.alpha, 255);
   });
 }

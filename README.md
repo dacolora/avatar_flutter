@@ -126,19 +126,24 @@ gestión de estado externo) que expone el controlador a los widgets hijos. De
 arriba a abajo, la pantalla arma:
 
 1. **`AvatarPreview`** (`lib/src/widgets/avatar_preview.dart`): un rectángulo
-   con un lavado pálido (25% de opacidad) del color de fondo elegido, y
-   centrado dentro, un **círculo** con ese mismo color pero sólido — como un
-   `CircleAvatar` — con un `Stack` de las capas ilustradas seleccionadas
-   encima (`controller.layerAssetPaths`). Solo el círculo (no el rectángulo
-   completo) está envuelto en un `RepaintBoundary`, clave para el paso de
-   guardado (ver más abajo): lo que se guarda es el círculo con el avatar,
-   no el fondo decorativo de la pantalla. Este rectángulo **se encoge** al
-   hacer scroll — ver la sección de [scroll](#scroll-preview-que-se-encoge-tabs-fijos-body-que-se-desplaza) más abajo.
+   con un lavado **pálido y opaco** (una mezcla de 25% con blanco, no
+   opacidad real — ver por qué en la sección de [scroll](#scroll-preview-que-se-encoge-tabs-fijos-body-que-se-desplaza)) del
+   color de fondo elegido, y centrado dentro, un **círculo** con ese mismo
+   color pero sólido — como un `CircleAvatar` — con un `Stack` de las capas
+   ilustradas seleccionadas encima (`controller.layerAssetPaths`). Solo el
+   círculo (no el rectángulo completo) está envuelto en un
+   `RepaintBoundary`, clave para el paso de guardado (ver más abajo): lo
+   que se guarda es el círculo con el avatar, no el fondo decorativo de la
+   pantalla. Este rectángulo **se encoge** al hacer scroll, entre los altos
+   que indique `AvatarCreatorConfig.previewExpandedHeight`/
+   `previewCollapsedHeight` (249/160 por defecto, personalizables por el
+   canal).
 2. **`AvatarCategoryTabs`** (`lib/src/widgets/avatar_category_tabs.dart`): la
    fila de tabs, uno por categoría del catálogo, resaltando
    `controller.activeCategoryId`. A diferencia del preview, esta fila
-   **no** se encoge: mantiene siempre el mismo alto
-   (`AvatarCategoryTabs.height`).
+   **no** se encoge: mantiene siempre el mismo alto fijo
+   (`AvatarCategoryTabs.height`), y tiene fondo blanco **opaco** por el
+   mismo motivo que el lavado pálido del preview.
 3. Según el `AvatarCategoryKind` de la categoría activa:
    * **`layer`** (Vestuario, Accesorios, Color de fondo): una sola sección,
      `AvatarSectionLabel` + **`AvatarOptionGrid`** (máx. 10 opciones).
@@ -161,14 +166,17 @@ lograr un comportamiento de scroll específico:
 
 1. **El preview se encoge, pero nunca desaparece.** Es un
    `SliverPersistentHeader` con `pinned: true` cuyo alto va de
-   `AvatarPreview.expandedHeight` (249, arriba del todo) a
-   `AvatarPreview.collapsedHeight` (96, el mínimo) a medida que el usuario
-   hace scroll hacia abajo, y vuelve a expandirse al subir — nunca llega a
-   ocultarse del todo. `AvatarPreview` recibe ese progreso como un valor
+   `AvatarCreatorConfig.previewExpandedHeight` (249 por defecto, arriba del
+   todo) a `previewCollapsedHeight` (160 por defecto, el mínimo) a medida
+   que el usuario hace scroll hacia abajo, y vuelve a expandirse al subir —
+   nunca llega a ocultarse del todo. Ambos altos son configurables por el
+   canal (ver `example/lib/main.dart`); `AvatarPreview` no tiene una
+   opinión propia sobre cuáles deberían ser, solo sabe interpolar entre los
+   que le pasen. Recibe el progreso del encogimiento como un valor
    `expansion` entre `0` (encogido) y `1` (expandido) y lo usa para
-   interpolar tanto su alto como el diámetro del círculo, sin animación:
-   como `expansion` cambia en cada frame de scroll, animarlo produciría un
-   desfase entre el dedo y el preview.
+   interpolar tanto su alto como el diámetro del círculo (siempre el 80%
+   del alto), sin animación: como `expansion` cambia en cada frame de
+   scroll, animarlo produciría un desfase entre el dedo y el preview.
 2. **Los tabs de categoría quedan siempre fijos, justo debajo del preview.**
    Es otro `SliverPersistentHeader` con `pinned: true`, pero con
    `minExtent == maxExtent` (`AvatarCategoryTabs.height`): no se encoge, y
@@ -185,6 +193,21 @@ Ambos headers usan el mismo delegate reutilizable
 (`_SliverHeaderDelegate`, privado de `avatar_creator_screen.dart`), que
 adapta cualquier widget a la interfaz que pide `SliverPersistentHeader`
 sin tener que escribir una subclase por header.
+
+### Por qué el preview y los tabs necesitan fondo opaco (no transparente)
+
+`SliverPersistentHeader(pinned: true)` pinta su contenido por encima de lo
+que scrollea debajo — así funciona cualquier header fijo de Flutter (por
+ejemplo, un `SliverAppBar` pinned). Pero "pintarse encima" en el orden de
+capas no sirve de nada si el fondo del header es transparente: el contenido
+scrolleado seguiría siendo visible **a través** de él. `AvatarCategoryTabs`
+tenía justo ese bug (su `Container` solo definía un borde, sin `color`) y
+`AvatarPreview` usaba opacidad real (`color.withOpacity(0.25)`) en vez de un
+color pálido sólido — en ambos casos, el body scrolleado terminaba
+"asomándose" detrás del preview/los tabs en vez de quedar tapado por
+completo. La corrección en los dos widgets fue la misma: usar un color
+**opaco** (mezclado con blanco para lograr el tono pálido, no
+`withOpacity`) tanto en el preview como en el fondo blanco de los tabs.
 
 Igual que con el `SingleChildScrollView` que se usaba antes de este
 rediseño, esto sigue evitando cualquier `Expanded`: un `CustomScrollView`

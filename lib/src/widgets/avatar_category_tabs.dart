@@ -32,7 +32,14 @@ class AvatarCategoryTabs extends StatelessWidget {
     final controller = AvatarCreatorScope.of(context);
 
     return Container(
+      // `color: Colors.white` es necesario, no solo estético: esta fila
+      // vive en un `SliverPersistentHeader` fijo (`pinned: true`), con el
+      // contenido de la categoría activa scrolleando por detrás. Sin un
+      // fondo opaco, ese contenido se vería "a través" de la fila de tabs
+      // en vez de quedar tapado por ella — es el mismo motivo por el que
+      // [AvatarPreview] usa un color pálido opaco en vez de opacidad real.
       decoration: const BoxDecoration(
+        color: Colors.white,
         border: Border(bottom: BorderSide(color: _dividerColor, width: 1)),
       ),
       // `ShaderMask` aplica un efecto visual (definido por `shaderCallback`)
