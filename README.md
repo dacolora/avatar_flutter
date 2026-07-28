@@ -71,8 +71,8 @@ concretas:
 
 | Responsabilidad | Librería (`avatar_flutter`) | Canal (la app que la embebe) |
 |---|---|---|
-| Catálogo de categorías y su orden (Rostro, Cabello, Vestuario, Accesorios, Color de fondo) | ✅ Definido en `defaultAvatarCatalog()` | ❌ No se personaliza; viene de la especificación de diseño |
-| Diseño visual de header, preview, tabs, grid/row, footer | ✅ Fijado por la especificación de diseño | ❌ Solo puede cambiar los textos, vía `AvatarCreatorConfig` |
+| Catálogo oficial y su orden (Rostro, Cabello, Vestuario, Accesorios, Color de fondo) | ✅ Definido en `defaultAvatarCatalog()`, es lo que se usa si el canal no pasa `categories` | ⚠️ Puede reemplazarlo por completo — con menos categorías, con más, o agregando una propia (ver [Personalización](#personalización-qué-puede-parametrizar-el-canal)) |
+| Diseño visual de header, preview, tabs, grid/row, footer | ✅ Fijado por la especificación de diseño | ⚠️ Puede cambiar textos, alturas del preview, columnas del grid y máximos por categoría — ver `AvatarCreatorConfig` |
 | Guardar la selección en memoria mientras el usuario navega entre tabs | ✅ `AvatarCreatorController` | — |
 | Componer las capas seleccionadas en una imagen | ✅ `AvatarCreatorController.save()` (captura el `RepaintBoundary` del preview) | — |
 | Persistir la imagen generada (subirla a un servidor, guardarla en disco/caché, asociarla al perfil del usuario) | ❌ La librería **nunca** hace esto | ✅ El canal, dentro de `onSaveSuccess` |
@@ -146,10 +146,13 @@ arriba a abajo, la pantalla arma:
    mismo motivo que el lavado pálido del preview.
 3. Según el `AvatarCategoryKind` de la categoría activa:
    * **`layer`** (Vestuario, Accesorios, Color de fondo): una sola sección,
-     `AvatarSectionLabel` + **`AvatarOptionGrid`** (máx. 10 opciones).
+     `AvatarSectionLabel` + **`AvatarOptionGrid`** (máx. 10 opciones, 3
+     columnas por defecto — ambos configurables, ver
+     [Personalización](#personalización-qué-puede-parametrizar-el-canal)).
    * **`layerWithColor`** (Cabello, Rostro): **dos** secciones seguidas — una
-     fila de color (`AvatarOptionRow`, máx. 5) y debajo una cuadrícula de
-     formas (`AvatarOptionGrid`, máx. 10). El color no se "aplica" en tiempo
+     fila de color (`AvatarOptionRow`, máx. 5 por defecto) y debajo una
+     cuadrícula de formas (`AvatarOptionGrid`, máx. 10 por defecto). El color
+     no se "aplica" en tiempo
      de ejecución: cada combinación de forma + color es un SVG real distinto
      (ver [assets reales](#assets-reales-el-color-viene-en-el-svg) más abajo).
      Cada opción, de cualquiera de las dos secciones, se dibuja con
@@ -264,6 +267,75 @@ simplemente se cierra sin devolver ningún resultado. Como el
 `AvatarCreatorController` de esa sesión se destruye junto con la pantalla
 (`dispose()`), cualquier selección hecha durante esa sesión se pierde — el
 canal nunca llega a enterarse de una elección que el usuario no confirmó.
+
+## Personalización: qué puede parametrizar el canal
+
+Como cada canal embebe esta experiencia con necesidades distintas, la regla
+de diseño de `avatar_flutter` es: **todo lo que se pueda parametrizar sin
+romper la especificación oficial, se expone en `AvatarCreatorConfig`, con un
+valor por defecto igual al de la especificación**. Un canal que no toca nada
+obtiene exactamente la experiencia oficial de Bancolombia; un canal que
+necesita algo distinto tiene el control real, no solo la ilusión de tenerlo.
+
+| Parámetro | Valor por defecto | Qué controla |
+|---|---|---|
+| `categories` | `defaultAvatarCatalog()` | El catálogo completo — ver más abajo |
+| `initialSelection` | `null` (avatar nuevo) | Reabrir un avatar ya guardado |
+| `title` / `backButtonLabel` / `saveButtonText` | textos oficiales en español | Los textos visibles del header/footer |
+| `previewExpandedHeight` / `previewCollapsedHeight` | `249` / `160` | Los altos del preview al abrir y tras hacer scroll del todo |
+| `gridCrossAxisCount` | `3` | Columnas de la cuadrícula de opciones ilustradas |
+| `maxGridOptions` | `10` | Máximo de opciones en una cuadrícula |
+| `maxRowOptions` | `5` | Máximo de opciones en una fila de color |
+| `onView` / `onSave` / `onSaveSuccess` / `onSaveError` / `onCancel` | sin efecto | Los puntos de extensión para analítica/persistencia (ver tabla de responsabilidades) |
+
+`example/lib/customization_gallery.dart` es una galería ejecutable con siete
+demos, alcanzable desde el ícono de ajustes (⚙️) de la barra superior de
+`example/lib/main.dart`: la experiencia por defecto, un formulario
+interactivo para tocar cada parámetro en vivo, un catálogo de solo 2
+categorías, uno de 6, uno con una categoría que la librería no contempla,
+reabrir un avatar existente, y los callbacks conectados a `SnackBar`s
+visibles.
+
+### El catálogo es del canal, no solo de la librería
+
+`AvatarCreatorConfig.categories` no es una puerta trasera para tests: es el
+punto de extensión pensado para que un canal arme su propia experiencia —
+reduciendo el catálogo oficial, extendiéndolo, o agregando una categoría que
+esta librería nunca contempló. El controlador no le da ningún trato especial
+al catálogo oficial: `AvatarCreatorController.layerAssetPaths` simplemente
+recorre `categories` en el orden en que vengan, sea cual sea su origen.
+
+```dart
+// El canal solo necesita dos categorías.
+AvatarCreatorConfig(
+  categories: [
+    defaultAvatarCatalog().firstWhere((c) => c.id == 'body'),
+    defaultAvatarCatalog().firstWhere((c) => c.id == 'background'),
+  ],
+)
+
+// El canal agrega una categoría propia, con su propio SVG.
+AvatarLayerCategory(
+  id: 'badge',
+  label: 'Insignia',
+  icon: Icons.military_tech_outlined,
+  kind: AvatarCategoryKind.layer,
+  options: const [
+    AvatarOption.layer(id: '1', assetPath: 'assets/badge/insignia_1.svg'),
+  ],
+)
+```
+
+Para que ese último ejemplo funcione de verdad hay un detalle importante:
+**`AvatarOption.assetPackage`**. `AvatarPreview` y `AvatarSelectableThumbnail`
+dibujan cada SVG con `SvgPicture.asset(path, package: ...)`, y ese parámetro
+`package` de Flutter le dice al framework en qué paquete buscar el asset — no
+es cosmético. Las opciones del catálogo oficial fijan
+`assetPackage: 'avatar_flutter'` porque sus SVGs viven empaquetados dentro de
+este paquete; una categoría propia del canal debe **dejar `assetPackage` en
+`null`** (su valor por defecto), para que el asset se busque en el bundle de
+la propia app del canal — donde lo haya declarado bajo `flutter: assets:` en
+su propio `pubspec.yaml`.
 
 ## Assets reales: el color viene en el SVG
 

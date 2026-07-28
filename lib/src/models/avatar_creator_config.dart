@@ -35,6 +35,9 @@ class AvatarCreatorConfig {
     this.saveButtonText = 'Guardar',
     this.previewExpandedHeight = 249,
     this.previewCollapsedHeight = 160,
+    this.gridCrossAxisCount = 3,
+    this.maxGridOptions = 10,
+    this.maxRowOptions = 5,
     this.onView,
     this.onSave,
     this.onSaveSuccess,
@@ -43,16 +46,34 @@ class AvatarCreatorConfig {
   }) : assert(
           previewCollapsedHeight <= previewExpandedHeight,
           'previewCollapsedHeight no puede ser mayor que previewExpandedHeight',
-        );
+        ),
+        assert(gridCrossAxisCount > 0, 'gridCrossAxisCount debe ser mayor que 0'),
+        assert(maxGridOptions > 0, 'maxGridOptions debe ser mayor que 0'),
+        assert(maxRowOptions > 0, 'maxRowOptions debe ser mayor que 0');
 
   /// Catálogo de categorías a usar. Si se deja en `null` (el caso normal),
   /// la pantalla usa [defaultAvatarCatalog], el catálogo oficial definido
   /// por esta librería.
   ///
-  /// Existe principalmente para pruebas y para escenarios muy particulares;
-  /// en un canal de producción normalmente **no** se debería sobreescribir,
-  /// porque el orden y contenido del catálogo responden a una especificación
-  /// de diseño ya validada, no a una preferencia libre de cada canal.
+  /// Este es el punto de extensión principal para un canal que necesite una
+  /// experiencia distinta a la oficial: como cada `avatar_flutter` se
+  /// embebe en canales con necesidades distintas, el canal puede reemplazar
+  /// el catálogo por uno propio — con menos categorías, con más, o
+  /// agregando alguna que esta librería no contempla. No hace falta que el
+  /// catálogo del canal reutilice nada de [defaultAvatarCatalog]: basta con
+  /// construir la lista de [AvatarLayerCategory] a mano.
+  ///
+  /// Si una categoría del canal es de tipo [AvatarCategoryKind.layer] o
+  /// [AvatarCategoryKind.layerWithColor] con opciones ilustradas (creadas
+  /// con [AvatarOption.layer]), su SVG normalmente vive en la propia app del
+  /// canal, no dentro de este paquete — en ese caso, deja
+  /// [AvatarOption.assetPackage] en `null` (su valor por defecto) para que
+  /// el asset se resuelva desde el bundle del canal.
+  ///
+  /// El único requisito real es el orden y contenido de
+  /// [defaultAvatarCatalog]: ese sí responde a una especificación de diseño
+  /// ya validada por Bancolombia y no debería alterarse cuando el canal
+  /// simplemente quiere la experiencia oficial tal cual.
   final List<AvatarLayerCategory>? categories;
 
   /// Selección con la que debe abrir el widget, expresada como un
@@ -117,6 +138,28 @@ class AvatarCreatorConfig {
   /// a [previewExpandedHeight] (si son iguales, el preview simplemente no
   /// se encoge).
   final double previewCollapsedHeight;
+
+  /// Número de columnas de la cuadrícula de opciones ilustradas
+  /// ([AvatarOptionGrid]) — 3 por defecto, el valor que pidió el equipo de
+  /// diseño de Bancolombia. El canal puede darle otro valor si su catálogo
+  /// tiene opciones que se ven mejor con más o menos columnas (por ejemplo,
+  /// miniaturas más simples suelen verse bien con 4 o 5 columnas).
+  final int gridCrossAxisCount;
+
+  /// Máximo de opciones que admite la cuadrícula de una categoría
+  /// ([AvatarOptionGrid]) — 10 por defecto, el límite de la especificación
+  /// de diseño oficial. Solo debería subirse si el canal agrega una
+  /// categoría propia (ver [categories]) que de verdad necesita más
+  /// opciones; las categorías del catálogo oficial nunca superan este
+  /// límite.
+  final int maxGridOptions;
+
+  /// Máximo de opciones que admite la fila de color de una categoría
+  /// [AvatarCategoryKind.layerWithColor] ([AvatarOptionRow]) — 5 por
+  /// defecto, el límite de la especificación de diseño oficial. Igual que
+  /// [maxGridOptions], solo debería subirse para una categoría propia del
+  /// canal.
+  final int maxRowOptions;
 
   /// ### Callbacks: el punto de extensión principal de la librería
   ///

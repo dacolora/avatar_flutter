@@ -9,7 +9,9 @@ import 'package:flutter/widgets.dart';
 /// distintas según qué constructor con nombre se haya usado para crearlo:
 ///
 /// * [AvatarOption.layer] — una capa ilustrada (un peinado, un rostro, un
-///   vestuario...). Apunta a un archivo SVG mediante [assetPath].
+///   vestuario...). Apunta a un archivo SVG mediante [assetPath], y a través
+///   de [assetPackage] indica si ese SVG vive dentro de este paquete o
+///   dentro de la propia app del canal.
 /// * [AvatarOption.color] — una muestra de color sólido, sin ilustración
 ///   (se usa hoy para la categoría "Color de fondo" y para las filas de
 ///   "Color del pelo"/"Tono de piel"). En vez de un asset, trae un [color].
@@ -59,6 +61,7 @@ class AvatarOption extends Equatable {
   const AvatarOption.layer({
     required this.id,
     required this.assetPath,
+    this.assetPackage,
     this.semanticLabel,
   }) : color = null;
 
@@ -71,7 +74,8 @@ class AvatarOption extends Equatable {
     required this.id,
     required this.color,
     this.semanticLabel,
-  }) : assetPath = null;
+  })  : assetPath = null,
+        assetPackage = null;
 
   /// Crea una opción que representa "ninguna" — por ejemplo, "Sin
   /// accesorios" en la categoría Accesorios. Al seleccionarla, esa categoría
@@ -83,6 +87,7 @@ class AvatarOption extends Equatable {
     required this.id,
     this.semanticLabel,
   })  : assetPath = null,
+        assetPackage = null,
         color = null;
 
   /// Identificador único de esta opción **dentro de su categoría** (por
@@ -95,6 +100,23 @@ class AvatarOption extends Equatable {
   /// la opción se creó con [AvatarOption.layer]; es `null` en las opciones
   /// de color y en [AvatarOption.none].
   final String? assetPath;
+
+  /// Paquete de Flutter dentro del cual vive [assetPath], o `null` si el
+  /// asset pertenece a la propia app del canal (no a un paquete).
+  ///
+  /// Este campo existe para que **el canal pueda agregar sus propias
+  /// categorías con sus propios SVGs**, algo que antes no funcionaba de
+  /// verdad: [AvatarPreview] y [AvatarSelectableThumbnail] cargan cada asset
+  /// con `SvgPicture.asset(path, package: ...)`, y el parámetro `package` de
+  /// Flutter le dice al framework **en qué paquete buscar** ese asset — no
+  /// es opcional ni cosmético. El catálogo oficial de esta librería
+  /// ([defaultAvatarCatalog]) fija `assetPackage: 'avatar_flutter'` en cada
+  /// una de sus opciones, porque esos SVGs viven empaquetados dentro de
+  /// *este* paquete. Un canal que agrega su propia categoría, en cambio,
+  /// debe **dejar este campo en `null`** (el valor por defecto): así el
+  /// asset se busca en el bundle de la propia app del canal, donde declaró
+  /// su SVG bajo `flutter: assets:` en su propio `pubspec.yaml`.
+  final String? assetPackage;
 
   /// Color de relleno sólido de esta opción. Solo tiene valor cuando la
   /// opción se creó con [AvatarOption.color]; es `null` en las opciones
@@ -116,5 +138,5 @@ class AvatarOption extends Equatable {
   /// Campos que [Equatable] usa para decidir si dos opciones son "la misma".
   /// Ver el comentario de la clase para entender por qué esto importa.
   @override
-  List<Object?> get props => [id, assetPath, color];
+  List<Object?> get props => [id, assetPath, assetPackage, color];
 }

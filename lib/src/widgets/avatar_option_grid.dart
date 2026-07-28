@@ -17,17 +17,23 @@ import 'avatar_selectable_thumbnail.dart';
 /// opciones son `category.options` (la cuadrícula normal) o
 /// `category.colorOptions` en algún otro contexto.
 ///
-/// Según la especificación de diseño, admite como máximo 10 opciones.
+/// Según la especificación de diseño, admite como máximo 10 opciones y se
+/// muestra en 3 columnas — ambos valores son los por defecto de
+/// [maxOptions] y [crossAxisCount], y el canal puede cambiarlos (ver
+/// [AvatarCreatorConfig.maxGridOptions] y
+/// [AvatarCreatorConfig.gridCrossAxisCount]).
 class AvatarOptionGrid extends StatelessWidget {
   AvatarOptionGrid({
     required this.options,
     required this.selectedOptionId,
     required this.onSelected,
     this.resolveAssetPath,
+    this.crossAxisCount = 3,
+    this.maxOptions = 10,
     super.key,
   }) : assert(
-          options.length <= 10,
-          'AvatarOptionGrid admite máximo 10 opciones por especificación',
+          options.length <= maxOptions,
+          'AvatarOptionGrid admite máximo $maxOptions opciones (ver AvatarCreatorConfig.maxGridOptions)',
         );
 
   /// Opciones a mostrar, en el orden en que deben aparecer en la cuadrícula.
@@ -57,6 +63,14 @@ class AvatarOptionGrid extends StatelessWidget {
   /// `option.assetPath` sin modificar.
   final String? Function(AvatarOption option)? resolveAssetPath;
 
+  /// Número de columnas de la cuadrícula. Ver
+  /// [AvatarCreatorConfig.gridCrossAxisCount] — 3 por defecto.
+  final int crossAxisCount;
+
+  /// Máximo de opciones admitidas. Ver
+  /// [AvatarCreatorConfig.maxGridOptions] — 10 por defecto.
+  final int maxOptions;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -76,11 +90,13 @@ class AvatarOptionGrid extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: options.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          // 3 columnas, tal como pidió el equipo de diseño (no 5, que era el
-          // valor con el que se empezó a construir el widget): con miniaturas
-          // cuadradas y más grandes se ven mejor 3 por fila que 5.
-          crossAxisCount: 3,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          // 3 columnas por defecto, tal como pidió el equipo de diseño (no
+          // 5, que era el valor con el que se empezó a construir el
+          // widget): con miniaturas cuadradas y más grandes se ven mejor 3
+          // por fila que 5. El canal puede personalizarlo — ver
+          // AvatarCreatorConfig.gridCrossAxisCount.
+          crossAxisCount: crossAxisCount,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
         ),

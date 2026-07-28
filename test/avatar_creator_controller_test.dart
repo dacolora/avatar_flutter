@@ -148,10 +148,39 @@ void main() {
       final controller = AvatarCreatorController(categories: categories);
       controller.selectColorOption('hair', 'purple');
 
-      expect(controller.layerAssetPaths, [
+      expect(controller.layerAssetPaths.map((layer) => layer.path), [
         'assets/avatar/body/body-1.svg',
         'assets/avatar/hair/Color=purple, Shape=hair-1.svg',
       ]);
+      // Estas categorías de prueba no fijan assetPackage (igual que una
+      // categoría propia del canal): debe quedar null, no asumir
+      // 'avatar_flutter'.
+      expect(controller.layerAssetPaths.map((layer) => layer.package), [null, null]);
+    });
+
+    test('layerAssetPaths respeta el assetPackage de cada opción (null para el canal, un paquete para el catálogo oficial)', () {
+      final mixedCategories = [
+        _layerCategory('body', ['body-1']), // sin assetPackage: como una categoría del canal
+        AvatarLayerCategory(
+          id: 'official',
+          label: 'official',
+          icon: Icons.circle,
+          kind: AvatarCategoryKind.layer,
+          options: const [
+            AvatarOption.layer(
+              id: 'o-1',
+              assetPath: 'assets/avatar/official/o-1.svg',
+              assetPackage: 'avatar_flutter',
+            ),
+          ],
+        ),
+      ];
+      final controller = AvatarCreatorController(categories: mixedCategories);
+
+      expect(
+        controller.layerAssetPaths.map((layer) => layer.package),
+        [null, 'avatar_flutter'],
+      );
     });
 
     test('resolveAssetPath returns null when the shape option is actually a pure color option', () {
@@ -199,13 +228,16 @@ void main() {
 
       expect(controller.selectedOptionFor('extra').id, 'none');
       expect(
-        controller.layerAssetPaths.any((path) => path.contains('extra')),
+        controller.layerAssetPaths.any((layer) => layer.path.contains('extra')),
         isFalse,
       );
 
       controller.selectOption('extra', 'style-1');
 
-      expect(controller.layerAssetPaths, contains('assets/avatar/extra/style-1.svg'));
+      expect(
+        controller.layerAssetPaths.map((layer) => layer.path),
+        contains('assets/avatar/extra/style-1.svg'),
+      );
     });
 
     test('save() surfaces a StateError and records it when the preview is not mounted', () async {

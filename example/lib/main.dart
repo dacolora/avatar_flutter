@@ -5,6 +5,8 @@ import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'customization_gallery.dart';
+
 /// Punto de entrada de la app de ejemplo. `runApp` es la función de Flutter
 /// que toma un widget raíz y lo pinta en pantalla; todo lo demás en este
 /// archivo describe cómo se ve y se comporta esa app.
@@ -160,7 +162,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi perfil')),
+      appBar: AppBar(
+        title: const Text('Mi perfil'),
+        actions: [
+          // Punto de entrada a la galeria de ejemplos de personalizacion
+          // (customization_gallery.dart): desde aqui, la pantalla
+          // principal del canal, se puede ver cada forma en la que este
+          // (u otro) canal puede parametrizar la experiencia.
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Ejemplos de personalizacion',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CustomizationGalleryScreen()),
+            ),
+          ),
+        ],
+      ),
       body: Center(
         child: Semantics(
           label: 'Foto de perfil',

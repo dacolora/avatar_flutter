@@ -38,6 +38,13 @@ import '../models/avatar_option.dart';
 ///   una **plantilla** con el marcador `{color}` (ver
 ///   [AvatarLayerCategory.resolveAssetPath], que sustituye ese marcador por
 ///   el id del color elegido).
+///
+/// Todas las opciones de este catálogo fijan
+/// `assetPackage: 'avatar_flutter'` porque sus SVGs viven empaquetados
+/// dentro de este paquete. Un canal que agregue su propia categoría (ver
+/// [AvatarCreatorConfig.categories]) debe dejar ese campo en `null` — así
+/// [AvatarOption.assetPackage] resuelve el asset desde el bundle de su
+/// propia app, no desde este paquete.
 List<AvatarLayerCategory> defaultAvatarCatalog() {
   return [
     _wardrobeLikeCategory(
@@ -150,6 +157,9 @@ AvatarLayerCategory _wardrobeLikeCategory({
         AvatarOption.layer(
           id: '${i + 1}',
           assetPath: assetPaths[i],
+          // Estos SVG viven empaquetados dentro de avatar_flutter, no en
+          // la app del canal — ver AvatarOption.assetPackage.
+          assetPackage: 'avatar_flutter',
           semanticLabel: '$semanticPrefix ${i + 1}',
         ),
     ],
@@ -185,6 +195,7 @@ AvatarLayerCategory _hairOrFaceCategory({
         AvatarOption.layer(
           id: '$shape',
           assetPath: 'assets/avatar/$id/Color={color}, Expression=$shape.svg',
+          assetPackage: 'avatar_flutter',
           semanticLabel: '$shapeSemanticPrefix $shape',
         ),
     ],

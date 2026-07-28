@@ -179,34 +179,41 @@ class AvatarCreatorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Rutas de los SVG a apilar en el preview (todas las categorías
-  /// **excepto** la de fondo, ver [AvatarLayerCategory.isBackground]), en el
-  /// mismo orden en que aparecen en [categories] — ese orden determina
-  /// literalmente qué capa queda "por encima" de cuál en el dibujo final
-  /// (ver [AvatarPreview], que recorre esta lista con un `Stack`).
+  /// Capas a apilar en el preview (todas las categorías **excepto** la de
+  /// fondo, ver [AvatarLayerCategory.isBackground]), en el mismo orden en
+  /// que aparecen en [categories] — ese orden determina literalmente qué
+  /// capa queda "por encima" de cuál en el dibujo final (ver
+  /// [AvatarPreview], que recorre esta lista con un `Stack`).
   ///
-  /// Cada ruta se calcula con [AvatarLayerCategory.resolveAssetPath], que
-  /// combina la forma elegida con el color elegido en esa misma categoría
-  /// (si tiene, ver [AvatarLayerCategory.colorOptions]) — así, en Cabello y
-  /// Rostro, esto devuelve directamente el archivo ya coloreado por diseño
-  /// para esa combinación exacta, sin ningún procesamiento adicional en
-  /// tiempo de ejecución.
+  /// Cada elemento es un record `(path, package)`: `path` se calcula con
+  /// [AvatarLayerCategory.resolveAssetPath], que combina la forma elegida
+  /// con el color elegido en esa misma categoría (si tiene, ver
+  /// [AvatarLayerCategory.colorOptions]) — así, en Cabello y Rostro, esto
+  /// devuelve directamente el archivo ya coloreado por diseño para esa
+  /// combinación exacta, sin ningún procesamiento adicional en tiempo de
+  /// ejecución. `package` viene tal cual de
+  /// [AvatarOption.assetPackage] de la opción de forma elegida — `null`
+  /// cuando la categoría es del canal (su SVG vive en su propia app), o
+  /// `'avatar_flutter'` cuando es una de las categorías del catálogo oficial.
   ///
   /// Si la opción elegida en una categoría es [AvatarOption.none] (por
   /// ejemplo, "Sin accesorios"), `resolveAssetPath` devuelve `null` para
   /// ella y esa categoría simplemente **no aporta ninguna capa** — por eso
   /// esta lista puede tener menos elementos que categorías no-fondo.
-  List<String> get layerAssetPaths {
-    final paths = <String>[];
+  List<({String path, String? package})> get layerAssetPaths {
+    final layers = <({String path, String? package})>[];
     for (final category in categories) {
       if (category.isBackground) continue;
+      final shapeOption = selectedOptionFor(category.id);
       final assetPath = category.resolveAssetPath(
-        selectedOptionFor(category.id),
+        shapeOption,
         selectedColorOptionFor(category.id),
       );
-      if (assetPath != null) paths.add(assetPath);
+      if (assetPath != null) {
+        layers.add((path: assetPath, package: shapeOption.assetPackage));
+      }
     }
-    return paths;
+    return layers;
   }
 
   /// Color de fondo actualmente seleccionado (busca la categoría marcada con

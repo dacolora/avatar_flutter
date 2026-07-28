@@ -102,7 +102,13 @@ class AvatarSelectableThumbnail extends StatelessWidget {
                       padding: const EdgeInsets.all(8),
                       child: SvgPicture.asset(
                         assetPathOverride ?? option.assetPath!,
-                        package: 'avatar_flutter',
+                        // `option.assetPackage` sigue siendo el paquete
+                        // correcto incluso cuando `assetPathOverride` trae
+                        // una ruta ya resuelta con el color elegido (ver
+                        // AvatarLayerCategory.resolveAssetPath): el color
+                        // solo cambia el nombre del archivo dentro de la
+                        // misma categoría, nunca en qué paquete vive.
+                        package: option.assetPackage,
                         fit: BoxFit.contain,
                       ),
                     ),

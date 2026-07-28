@@ -20,3 +20,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # SVG de la categoria "Insignia" que se usa en la galeria de
+    # personalizacion (customization_gallery.dart) para demostrar que un
+    # canal puede agregar su propia categoria con su propio arte, empaquetado
+    # en su propia app en vez de en avatar_flutter — ver
+    # AvatarOption.assetPackage.
+    - assets/badge/

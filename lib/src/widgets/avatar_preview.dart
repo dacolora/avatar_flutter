@@ -145,19 +145,22 @@ class AvatarPreview extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        for (final assetPath in controller.layerAssetPaths)
+                        for (final layer in controller.layerAssetPaths)
                           SvgPicture.asset(
-                            assetPath,
-                            // `package: 'avatar_flutter'` le dice a
-                            // `flutter_svg` que el asset vive dentro de
-                            // este paquete (en su propia carpeta
-                            // `assets/`), no en la app que lo consume. Es
-                            // necesario porque los assets declarados en el
-                            // `pubspec.yaml` de un paquete no son
-                            // automáticamente visibles para la app
-                            // anfitriona salvo que se indique
-                            // explícitamente de qué paquete vienen.
-                            package: 'avatar_flutter',
+                            layer.path,
+                            // `package` le dice a `flutter_svg` en qué
+                            // paquete buscar el asset — necesario porque
+                            // los assets declarados en el `pubspec.yaml`
+                            // de un paquete no son automáticamente
+                            // visibles para la app anfitriona salvo que se
+                            // indique explícitamente de qué paquete
+                            // vienen. Viene de
+                            // `AvatarOption.assetPackage`: `'avatar_flutter'`
+                            // para las categorías del catálogo oficial,
+                            // `null` para una categoría que el propio
+                            // canal haya agregado (su SVG vive en el
+                            // bundle de su propia app).
+                            package: layer.package,
                             fit: BoxFit.contain,
                           ),
                       ],

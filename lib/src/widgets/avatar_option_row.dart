@@ -12,16 +12,19 @@ import 'avatar_selectable_thumbnail.dart';
 /// siempre `category.colorOptions` — para no acoplarse a ningún concepto de
 /// categoría, fondo o cuadrícula.
 ///
-/// Según la especificación de diseño, admite como máximo 5 opciones.
+/// Según la especificación de diseño, admite como máximo 5 opciones — el
+/// valor por defecto de [maxOptions], que el canal puede cambiar (ver
+/// [AvatarCreatorConfig.maxRowOptions]).
 class AvatarOptionRow extends StatelessWidget {
   AvatarOptionRow({
     required this.options,
     required this.selectedOptionId,
     required this.onSelected,
+    this.maxOptions = 5,
     super.key,
   }) : assert(
-          options.length <= 5,
-          'AvatarOptionRow admite máximo 5 opciones por especificación',
+          options.length <= maxOptions,
+          'AvatarOptionRow admite máximo $maxOptions opciones (ver AvatarCreatorConfig.maxRowOptions)',
         );
 
   /// Opciones a mostrar, en el orden en que deben aparecer en la fila.
@@ -32,6 +35,10 @@ class AvatarOptionRow extends StatelessWidget {
 
   /// Se invoca con el id de la opción que el usuario acaba de tocar.
   final ValueChanged<String> onSelected;
+
+  /// Máximo de opciones admitidas. Ver
+  /// [AvatarCreatorConfig.maxRowOptions] — 5 por defecto.
+  final int maxOptions;
 
   @override
   Widget build(BuildContext context) {

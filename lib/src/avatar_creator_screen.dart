@@ -314,6 +314,7 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                         AvatarOptionRow(
                           options: activeCategory.colorOptions!,
                           selectedOptionId: selectedColorOptionId,
+                          maxOptions: widget.config.maxRowOptions,
                           onSelected: (optionId) =>
                               controller.selectColorOption(
                             activeCategory.id,
@@ -329,6 +330,8 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                       AvatarOptionGrid(
                         options: activeCategory.options,
                         selectedOptionId: selectedOptionId,
+                        crossAxisCount: widget.config.gridCrossAxisCount,
+                        maxOptions: widget.config.maxGridOptions,
                         // `resolveAssetPath` combina la forma de cada
                         // opción con el color actualmente elegido en esta
                         // categoría (si tiene uno, ver
