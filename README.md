@@ -45,6 +45,11 @@ if (resultado is AvatarCreatorResult) {
   // la sección siguiente.
   await miServicioDePerfil.actualizarAvatar(resultado.imageBytes);
   await guardarSeleccionEnSharedPreferences(resultado.selection);
+
+  // resultado.imageProvider entrega esos mismos bytes ya envueltos en un
+  // ImageProvider (MemoryImage), listo para mostrarse sin construirlo a
+  // mano — útil cuando lo que necesitas es pintar la imagen, no subirla.
+  setState(() => _avatarImageProvider = resultado.imageProvider);
 }
 ```
 
@@ -66,8 +71,10 @@ concretas:
   momento adecuado, pero nunca decide qué hacen — quien decide es quien los
   implementa, es decir, el canal.
 * [`AvatarCreatorResult`] (lo que se recibe al guardar) solo trae los bytes de
-  la imagen generada y la selección final. No hay ningún método
-  `.guardar()` ni `.subirAServidor()` en esta clase — a propósito.
+  la imagen generada (`imageBytes`, más `imageProvider` como conveniencia —
+  el mismo `Uint8List` ya envuelto en un `MemoryImage`, listo para pintarse)
+  y la selección final. No hay ningún método `.guardar()` ni
+  `.subirAServidor()` en esta clase — a propósito.
 
 | Responsabilidad | Librería (`avatar_flutter`) | Canal (la app que la embebe) |
 |---|---|---|

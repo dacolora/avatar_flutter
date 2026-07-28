@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
@@ -50,12 +49,15 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  /// La imagen del avatar guardada más recientemente. Nótese que esto vive
-  /// **aquí**, en el estado del canal, no dentro de la librería: es
-  /// precisamente la responsabilidad de persistencia que le corresponde al
-  /// canal (en una app real, en vez de guardarla solo en memoria como aquí,
-  /// se subiría a un servidor o se guardaría en disco).
-  Uint8List? _avatarImageBytes;
+  /// La imagen del avatar guardada más recientemente, ya como un
+  /// `ImageProvider` listo para pasarle directo a `CircleAvatar.
+  /// backgroundImage` (ver [AvatarCreatorResult.imageProvider] — evita tener
+  /// que envolver `result.imageBytes` en un `MemoryImage` a mano). Nótese
+  /// que esto vive **aquí**, en el estado del canal, no dentro de la
+  /// librería: es precisamente la responsabilidad de persistencia que le
+  /// corresponde al canal (en una app real, en vez de guardarla solo en
+  /// memoria como aquí, se subiría a un servidor o se guardaría en disco).
+  ImageProvider? _avatarImageProvider;
 
   /// Llave bajo la que se guarda la selección del avatar en
   /// `SharedPreferences`. `SharedPreferences` solo almacena tipos simples
@@ -115,9 +117,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     // El widget solo genera la imagen y la selección; sincronizarlas es
-    // responsabilidad del canal (ver "Reglas de uso").
+    // responsabilidad del canal (ver "Reglas de uso"). result.imageBytes
+    // sigue disponible si el canal necesita los bytes crudos (por ejemplo,
+    // para subirlos a un servidor); result.imageProvider es la versión ya
+    // lista para mostrarse en un widget de imagen.
     if (result is AvatarCreatorResult) {
-      if (mounted) setState(() => _avatarImageBytes = result.imageBytes);
+      if (mounted) setState(() => _avatarImageProvider = result.imageProvider);
       await _saveSelection(result.selection);
     }
   }
@@ -188,9 +193,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 CircleAvatar(
                   radius: 56,
-                  backgroundImage:
-                      _avatarImageBytes != null ? MemoryImage(_avatarImageBytes!) : null,
-                  child: _avatarImageBytes == null ? const Icon(Icons.person, size: 48) : null,
+                  backgroundImage: _avatarImageProvider,
+                  child: _avatarImageProvider == null ? const Icon(Icons.person, size: 48) : null,
                 ),
                 Positioned(
                   bottom: 0,

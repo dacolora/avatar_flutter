@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart' show ImageProvider, MemoryImage;
+
 /// Resultado que la librería entrega al canal cuando el usuario guarda el
 /// avatar (ver [AvatarCreatorController.save] y
 /// [AvatarCreatorConfig.onSaveSuccess]).
@@ -49,4 +51,24 @@ class AvatarCreatorResult {
   /// paquetes HTTP, por lo que el canal puede tomar estos bytes y subirlos
   /// o mostrarlos sin conversiones adicionales.
   final Uint8List imageBytes;
+
+  /// [imageBytes] envuelto en un [ImageProvider] ([MemoryImage]), listo para
+  /// usarse directamente en cualquier widget que reciba una imagen —
+  /// `CircleAvatar(backgroundImage: result.imageProvider)`,
+  /// `Image(image: result.imageProvider)`,
+  /// `DecorationImage(image: result.imageProvider)`, etc. — sin que el canal
+  /// tenga que construir el `MemoryImage` por su cuenta.
+  ///
+  /// No es [AssetImage]: ese `ImageProvider` es específicamente para assets
+  /// declarados en el `pubspec.yaml` de una app o paquete (archivos que
+  /// existen en disco antes de correr la app), y esta imagen se genera en
+  /// memoria en tiempo de ejecución — [MemoryImage] es el `ImageProvider`
+  /// equivalente para ese caso.
+  ///
+  /// Es un getter, no un campo: cada llamada crea una instancia nueva de
+  /// `MemoryImage`, pero como todas envuelven el mismo [imageBytes] (la
+  /// misma instancia de `Uint8List`, no una copia), Flutter las considera
+  /// `==` entre sí y las cachea como la misma imagen — no genera trabajo de
+  /// decodificación repetido por usar el getter varias veces.
+  ImageProvider get imageProvider => MemoryImage(imageBytes);
 }
