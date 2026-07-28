@@ -196,7 +196,10 @@ void main() {
     final decoration = tabsContainer.decoration as BoxDecoration;
 
     expect(decoration.color, isNotNull);
-    expect(decoration.color!.alpha, 255);
+    // `.alpha` (el entero 0-255) está deprecado desde el rediseño de `Color`
+    // con canales de punto flotante; `.a` (double, 0.0-1.0) es su
+    // reemplazo — 1.0 significa "completamente opaco".
+    expect(decoration.color!.a, 1.0);
   });
 
   testWidgets(
