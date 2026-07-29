@@ -6,20 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'customization_gallery.dart';
 
-/// Punto de entrada de la app de ejemplo. `runApp` es la función de Flutter
-/// que toma un widget raíz y lo pinta en pantalla; todo lo demás en este
-/// archivo describe cómo se ve y se comporta esa app.
 void main() => runApp(const AvatarFlutterExampleApp());
 
-/// App de ejemplo completa: **esto es código del canal, no de la librería**.
-/// Nada de este archivo se publica dentro del paquete `avatar_flutter` (vive
-/// en `example/`, una convención de los paquetes de Flutter para tener una
-/// app real de demostración); su único propósito es mostrar, con un caso
-/// concreto, cómo una app anfitriona integraría el widget: dónde se guarda la
-/// selección entre sesiones (aquí, con `shared_preferences`, el paquete
-/// estándar de Flutter para persistir datos simples clave-valor en el
-/// dispositivo), cómo se usa la imagen resultante, y cómo se ofrece la
-/// entrada al creador de avatar desde una pantalla de perfil.
 class AvatarFlutterExampleApp extends StatelessWidget {
   const AvatarFlutterExampleApp({super.key});
 
@@ -37,10 +25,6 @@ class AvatarFlutterExampleApp extends StatelessWidget {
   }
 }
 
-/// Pantalla de perfil de la app de ejemplo. Representa "la pantalla del
-/// canal" desde la cual normalmente se entra al creador de avatar (según la
-/// especificación, típicamente desde un botón de edición sobre la foto de
-/// perfil).
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -76,6 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     final json = prefs.getString(_selectionPrefsKey);
     if (json == null) return {};
+    print(json);
     return Map<String, String>.from(jsonDecode(json) as Map);
   }
 
@@ -106,13 +91,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         previewExpandedHeight: 249,
         previewCollapsedHeight: 160,
         // Hooks de tagueo sugeridos: el canal decide si/cómo los envía.
-        onView: () =>
-            debugPrint('tag: ${AvatarAnalyticsEvents.avatarCreatorView}'),
-        onSave: () => debugPrint('tag: ${AvatarAnalyticsEvents.avatarSave}'),
-        onSaveSuccess: (_) =>
-            debugPrint('tag: ${AvatarAnalyticsEvents.avatarSaveSuccess}'),
-        onSaveError: (_) =>
-            debugPrint('tag: ${AvatarAnalyticsEvents.avatarSaveError}'),
+        onView: () => debugPrint('tag: '),
+        onSave: () => debugPrint('tag: '),
+        onSaveSuccess: (_) => debugPrint('tag: '),
+        onSaveError: (_) => debugPrint('tag: '),
       ),
     );
 
@@ -170,15 +152,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Mi perfil'),
         actions: [
-          // Punto de entrada a la galeria de ejemplos de personalizacion
-          // (customization_gallery.dart): desde aqui, la pantalla
-          // principal del canal, se puede ver cada forma en la que este
-          // (u otro) canal puede parametrizar la experiencia.
           IconButton(
             icon: const Icon(Icons.tune),
             tooltip: 'Ejemplos de personalizacion',
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CustomizationGalleryScreen()),
+              MaterialPageRoute(
+                  builder: (_) => const CustomizationGalleryScreen()),
             ),
           ),
         ],
@@ -194,19 +173,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CircleAvatar(
                   radius: 56,
                   backgroundImage: _avatarImageProvider,
-                  child: _avatarImageProvider == null ? const Icon(Icons.person, size: 48) : null,
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: CircleAvatar(
-                    radius: 16,
-                    child: Icon(
-                      Icons.camera_alt,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
+                  child: _avatarImageProvider == null
+                      ? const Icon(Icons.person, size: 48)
+                      : null,
                 ),
               ],
             ),

@@ -28,7 +28,7 @@ class AvatarOptionGrid extends StatelessWidget {
     required this.selectedOptionId,
     required this.onSelected,
     this.resolveAssetPath,
-    this.crossAxisCount = 3,
+    this.crossAxisCount = 2,
     this.maxOptions = 10,
     super.key,
   }) : assert(

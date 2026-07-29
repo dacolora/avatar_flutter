@@ -35,7 +35,7 @@ class AvatarCreatorConfig {
     this.saveButtonText = 'Guardar',
     this.previewExpandedHeight = 249,
     this.previewCollapsedHeight = 160,
-    this.gridCrossAxisCount = 3,
+    this.gridCrossAxisCount = 2,
     this.maxGridOptions = 10,
     this.maxRowOptions = 5,
     this.onView,
@@ -43,11 +43,12 @@ class AvatarCreatorConfig {
     this.onSaveSuccess,
     this.onSaveError,
     this.onCancel,
-  }) : assert(
+  })  : assert(
           previewCollapsedHeight <= previewExpandedHeight,
           'previewCollapsedHeight no puede ser mayor que previewExpandedHeight',
         ),
-        assert(gridCrossAxisCount > 0, 'gridCrossAxisCount debe ser mayor que 0'),
+        assert(
+            gridCrossAxisCount > 0, 'gridCrossAxisCount debe ser mayor que 0'),
         assert(maxGridOptions > 0, 'maxGridOptions debe ser mayor que 0'),
         assert(maxRowOptions > 0, 'maxRowOptions debe ser mayor que 0');
 

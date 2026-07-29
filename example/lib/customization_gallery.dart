@@ -20,16 +20,14 @@ class CustomizationGalleryScreen extends StatelessWidget {
         children: [
           _DemoCard(
             title: '1. Por defecto',
-            description:
-                'AvatarCreatorConfig() sin ningun parametro: catalogo '
+            description: 'AvatarCreatorConfig() sin ningun parametro: catalogo '
                 'oficial, 3 columnas, alturas 249/160, textos por defecto. '
                 'Es lo que obtiene un canal que no personaliza nada.',
             onOpen: () => _openDemo(context, const AvatarCreatorConfig()),
           ),
           _DemoCard(
             title: '2. Personalizacion completa (interactiva)',
-            description:
-                'Abre un formulario donde puedes cambiar en vivo cada '
+            description: 'Abre un formulario donde puedes cambiar en vivo cada '
                 'parametro de AvatarCreatorConfig (alturas, columnas del '
                 'grid, maximos, textos) y despues abrir el creador con esos '
                 'valores exactos.',
@@ -97,7 +95,8 @@ Future<void> _openDemo(BuildContext context, AvatarCreatorConfig config) async {
       SnackBar(content: Text('Guardado: ${result.selection}')),
     );
   } else {
-    messenger.showSnackBar(const SnackBar(content: Text('Cancelado, sin guardar')));
+    messenger
+        .showSnackBar(const SnackBar(content: Text('Cancelado, sin guardar')));
   }
 }
 
@@ -182,13 +181,15 @@ AvatarCreatorConfig _editExistingConfig() {
 
 AvatarCreatorConfig _callbacksConfig(BuildContext context) {
   final messenger = ScaffoldMessenger.of(context);
-  void toast(String text) => messenger.showSnackBar(SnackBar(content: Text(text)));
+  void toast(String text) =>
+      messenger.showSnackBar(SnackBar(content: Text(text)));
 
   return AvatarCreatorConfig(
     title: 'Avatar (con callbacks)',
     onView: () => toast('onView: el usuario ya esta viendo el creador'),
     onSave: () => toast('onSave: se toco "Guardar"'),
-    onSaveSuccess: (result) => toast('onSaveSuccess: ${result.selection.length} categorias guardadas'),
+    onSaveSuccess: (result) =>
+        toast('onSaveSuccess: ${result.selection.length} categorias guardadas'),
     onSaveError: (error) => toast('onSaveError: $error'),
     onCancel: () => toast('onCancel: se cerro sin guardar'),
   );
@@ -239,7 +240,7 @@ class PlaygroundScreen extends StatefulWidget {
 class _PlaygroundScreenState extends State<PlaygroundScreen> {
   double _expandedHeight = 249;
   double _collapsedHeight = 160;
-  int _gridCrossAxisCount = 3;
+  int _gridCrossAxisCount = 2;
   int _maxGridOptions = 10;
   int _maxRowOptions = 5;
   final _titleController = TextEditingController(text: 'Crear avatar');
@@ -278,7 +279,8 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
           const SizedBox(height: 16),
           TextField(
             controller: _saveButtonController,
-            decoration: const InputDecoration(labelText: 'Texto del boton Guardar'),
+            decoration:
+                const InputDecoration(labelText: 'Texto del boton Guardar'),
           ),
           const SizedBox(height: 24),
           _SliderRow(

@@ -68,7 +68,8 @@ class AvatarPreview extends StatelessWidget {
     final backgroundColor = controller.backgroundColor;
 
     final clampedExpansion = expansion.clamp(0.0, 1.0);
-    final height = lerpDouble(collapsedHeight, expandedHeight, clampedExpansion);
+    final height =
+        lerpDouble(collapsedHeight, expandedHeight, clampedExpansion);
     final circleDiameter = height * _circleToHeightRatio;
 
     // El alto y el diámetro del círculo se fijan directamente a partir de
