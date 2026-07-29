@@ -134,7 +134,8 @@ class _CategoryTabButton extends StatelessWidget {
             shape: BoxShape.circle,
             color: isSelected ? scheme.primaryContainer : Colors.transparent,
           ),
-          child: Icon(icon, color: isSelected ? scheme.primary : scheme.onSurfaceVariant),
+          child: Icon(icon,
+              color: isSelected ? scheme.primary : scheme.onSurfaceVariant),
         ),
       ),
     );

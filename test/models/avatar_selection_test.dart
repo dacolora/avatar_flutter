@@ -6,7 +6,8 @@ void main() {
   // exporta desde avatar_flutter.dart), por eso se importa directamente
   // desde src/ — el mismo patrón que ya usan las pruebas de
   // avatar_creator_screen_test.dart para los widgets internos.
-  test('dos AvatarSelection con el mismo mapa son iguales gracias a Equatable', () {
+  test('dos AvatarSelection con el mismo mapa son iguales gracias a Equatable',
+      () {
     final a = AvatarSelection({'hair': 'hair-1'});
     final b = AvatarSelection({'hair': 'hair-1'});
 

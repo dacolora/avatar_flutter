@@ -13,7 +13,9 @@ void main() {
     expect((result.imageProvider as MemoryImage).bytes, same(bytes));
   });
 
-  test('dos llamadas a imageProvider son == entre si (mismo Uint8List subyacente)', () {
+  test(
+      'dos llamadas a imageProvider son == entre si (mismo Uint8List subyacente)',
+      () {
     final bytes = Uint8List.fromList([1, 2, 3, 4]);
     final result = AvatarCreatorResult(selection: const {}, imageBytes: bytes);
 

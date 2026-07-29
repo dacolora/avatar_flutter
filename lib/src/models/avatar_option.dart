@@ -9,9 +9,12 @@ import 'package:flutter/widgets.dart';
 /// distintas según qué constructor con nombre se haya usado para crearlo:
 ///
 /// * [AvatarOption.layer] — una capa ilustrada (un peinado, un rostro, un
-///   vestuario...). Apunta a un archivo SVG mediante [assetPath], y a través
-///   de [assetPackage] indica si ese SVG vive dentro de este paquete o
-///   dentro de la propia app del canal.
+///   vestuario...). Apunta a un archivo SVG mediante [assetPath] (la versión
+///   para el preview) y, opcionalmente, [thumbnailAssetPath] (una versión
+///   distinta para su miniatura en la cuadrícula, si la ilustración no se ve
+///   bien igual de grande y de chica). A través de [assetPackage] indica si
+///   esos SVG viven dentro de este paquete o dentro de la propia app del
+///   canal.
 /// * [AvatarOption.color] — una muestra de color sólido, sin ilustración
 ///   (se usa hoy para la categoría "Color de fondo" y para las filas de
 ///   "Color del pelo"/"Tono de piel"). En vez de un asset, trae un [color].
@@ -61,6 +64,7 @@ class AvatarOption extends Equatable {
   const AvatarOption.layer({
     required this.id,
     required this.assetPath,
+    this.thumbnailAssetPath,
     this.assetPackage,
     this.semanticLabel,
   }) : color = null;
@@ -75,6 +79,7 @@ class AvatarOption extends Equatable {
     required this.color,
     this.semanticLabel,
   })  : assetPath = null,
+        thumbnailAssetPath = null,
         assetPackage = null;
 
   /// Crea una opción que representa "ninguna" — por ejemplo, "Sin
@@ -87,6 +92,7 @@ class AvatarOption extends Equatable {
     required this.id,
     this.semanticLabel,
   })  : assetPath = null,
+        thumbnailAssetPath = null,
         assetPackage = null,
         color = null;
 
@@ -100,6 +106,25 @@ class AvatarOption extends Equatable {
   /// la opción se creó con [AvatarOption.layer]; es `null` en las opciones
   /// de color y en [AvatarOption.none].
   final String? assetPath;
+
+  /// Ruta del SVG a usar en la miniatura seleccionable
+  /// ([AvatarSelectableThumbnail], dentro de [AvatarOptionGrid]), si es
+  /// distinta de [assetPath].
+  ///
+  /// Existen dos versiones de cada ilustración porque el mismo SVG no se ve
+  /// bien en los dos contextos a la vez: [assetPath] está pensado para
+  /// apilarse con las demás capas dentro del círculo del preview (tamaño y
+  /// posición relativa exactos para que todo calce), mientras que
+  /// [thumbnailAssetPath] está recortado/centrado para verse bien solo,
+  /// dentro de un cuadro pequeño de la cuadrícula de selección — usar el
+  /// mismo SVG en ambos lados producía miniaturas con la ilustración
+  /// recortada o mal centrada.
+  ///
+  /// Si se deja en `null` (el valor por defecto), la miniatura simplemente
+  /// usa [assetPath] — el comportamiento de antes de que existiera esta
+  /// distinción, y lo esperable para una opción cuya ilustración sí se ve
+  /// bien en los dos tamaños.
+  final String? thumbnailAssetPath;
 
   /// Paquete de Flutter dentro del cual vive [assetPath], o `null` si el
   /// asset pertenece a la propia app del canal (no a un paquete).
@@ -138,5 +163,6 @@ class AvatarOption extends Equatable {
   /// Campos que [Equatable] usa para decidir si dos opciones son "la misma".
   /// Ver el comentario de la clase para entender por qué esto importa.
   @override
-  List<Object?> get props => [id, assetPath, assetPackage, color];
+  List<Object?> get props =>
+      [id, assetPath, thumbnailAssetPath, assetPackage, color];
 }

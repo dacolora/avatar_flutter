@@ -5,9 +5,9 @@ import 'avatar_selectable_thumbnail.dart';
 
 /// Cuadrícula de opciones ilustradas (#8 "Elementos seleccionables — Grid"
 /// de la especificación). Se usa tanto para categorías simples de una sola
-/// cuadrícula (Vestuario, Accesorios, Color de fondo) como para la mitad
-/// "forma" de una categoría de tipo [AvatarCategoryKind.layerWithColor]
-/// (Cabello, Rostro), que además muestra una fila de color encima (ver
+/// cuadrícula (por ejemplo, "Color de fondo") como para la mitad "forma" de
+/// una categoría de tipo [AvatarCategoryKind.layerWithColor] (Vestuario,
+/// Cabello, Rostro), que además muestra una fila de color encima (ver
 /// [AvatarOptionRow]).
 ///
 /// Recibe directamente la lista de [options] a mostrar (no una
@@ -17,19 +17,18 @@ import 'avatar_selectable_thumbnail.dart';
 /// opciones son `category.options` (la cuadrícula normal) o
 /// `category.colorOptions` en algún otro contexto.
 ///
-/// Según la especificación de diseño, admite como máximo 10 opciones y se
-/// muestra en 3 columnas — ambos valores son los por defecto de
-/// [maxOptions] y [crossAxisCount], y el canal puede cambiarlos (ver
-/// [AvatarCreatorConfig.maxGridOptions] y
+/// Admite como máximo 11 opciones y se muestra en 2 columnas por defecto —
+/// ambos valores son los por defecto de [maxOptions] y [crossAxisCount], y
+/// el canal puede cambiarlos (ver [AvatarCreatorConfig.maxGridOptions] y
 /// [AvatarCreatorConfig.gridCrossAxisCount]).
 class AvatarOptionGrid extends StatelessWidget {
   AvatarOptionGrid({
     required this.options,
     required this.selectedOptionId,
     required this.onSelected,
-    this.resolveAssetPath,
+    this.resolveThumbnailAssetPath,
     this.crossAxisCount = 2,
-    this.maxOptions = 10,
+    this.maxOptions = 11,
     super.key,
   }) : assert(
           options.length <= maxOptions,
@@ -45,30 +44,30 @@ class AvatarOptionGrid extends StatelessWidget {
   /// Se invoca con el id de la opción que el usuario acaba de tocar.
   final ValueChanged<String> onSelected;
 
-  /// Calcula la ruta real del SVG de cada opción, en vez de usar
-  /// `option.assetPath` directamente (por ejemplo,
-  /// `AvatarLayerCategory.resolveAssetPath(option, colorActual)`). Se usa
-  /// sobre todo cuando la categoría activa tiene una fila de color asociada
-  /// (ver [AvatarLayerCategory.colorOptions]): ahí, el archivo real de cada
-  /// forma depende también del color elegido en esa fila, así que **todas**
-  /// las miniaturas de la cuadrícula —no solo la seleccionada— deben
-  /// recalcular su ruta cada vez que el color cambia.
+  /// Calcula la ruta real de la miniatura de cada opción, en vez de usar
+  /// `option.thumbnailAssetPath`/`option.assetPath` directamente (por
+  /// ejemplo, `AvatarLayerCategory.resolveThumbnailAssetPath(option,
+  /// colorActual)`). Se usa sobre todo cuando la categoría activa tiene una
+  /// fila de color asociada (ver [AvatarLayerCategory.colorOptions]): ahí,
+  /// el archivo real de cada forma depende también del color elegido en esa
+  /// fila, así que **todas** las miniaturas de la cuadrícula —no solo la
+  /// seleccionada— deben recalcular su ruta cada vez que el color cambia.
   ///
   /// Puede devolver `null` para una opción dada — por ejemplo, si `option`
   /// es en realidad una opción de color puro (como en "Color de fondo") o
-  /// una opción [AvatarOption.none] ("Sin accesorios"): en esos casos no hay
-  /// ningún SVG que dibujar, y [AvatarSelectableThumbnail] ignora
-  /// `assetPathOverride` y muestra el color real o el ícono de "ninguno" en
-  /// su lugar. Si se deja todo el parámetro en `null`, cada miniatura usa
-  /// `option.assetPath` sin modificar.
-  final String? Function(AvatarOption option)? resolveAssetPath;
+  /// una opción [AvatarOption.none]: en esos casos no hay ningún SVG que
+  /// dibujar, y [AvatarSelectableThumbnail] ignora `assetPathOverride` y
+  /// muestra el color real o el ícono de "ninguno" en su lugar. Si se deja
+  /// todo el parámetro en `null`, cada miniatura usa
+  /// `option.thumbnailAssetPath ?? option.assetPath` sin modificar.
+  final String? Function(AvatarOption option)? resolveThumbnailAssetPath;
 
   /// Número de columnas de la cuadrícula. Ver
   /// [AvatarCreatorConfig.gridCrossAxisCount] — 3 por defecto.
   final int crossAxisCount;
 
   /// Máximo de opciones admitidas. Ver
-  /// [AvatarCreatorConfig.maxGridOptions] — 10 por defecto.
+  /// [AvatarCreatorConfig.maxGridOptions] — 11 por defecto.
   final int maxOptions;
 
   @override
@@ -106,7 +105,7 @@ class AvatarOptionGrid extends StatelessWidget {
             option: option,
             isSelected: option.id == selectedOptionId,
             onTap: () => onSelected(option.id),
-            assetPathOverride: resolveAssetPath?.call(option),
+            assetPathOverride: resolveThumbnailAssetPath?.call(option),
           );
         },
       ),

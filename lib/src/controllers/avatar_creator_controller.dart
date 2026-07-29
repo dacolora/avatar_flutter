@@ -53,7 +53,8 @@ class AvatarCreatorController extends ChangeNotifier {
   AvatarCreatorController({
     required List<AvatarLayerCategory> categories,
     Map<String, String>? initialSelection,
-  })  : assert(categories.isNotEmpty, 'El catálogo debe tener al menos una categoría'),
+  })  : assert(categories.isNotEmpty,
+            'El catálogo debe tener al menos una categoría'),
         categories = List.unmodifiable(categories),
         _selection = initialSelection != null
             ? AvatarSelection(initialSelection)
@@ -65,7 +66,8 @@ class AvatarCreatorController extends ChangeNotifier {
   /// tenga [AvatarLayerCategory.colorOptions]. Se usa cuando el canal no
   /// proporciona una [AvatarCreatorConfig.initialSelection] explícita (caso
   /// "avatar nuevo").
-  static AvatarSelection _defaultSelection(List<AvatarLayerCategory> categories) {
+  static AvatarSelection _defaultSelection(
+      List<AvatarLayerCategory> categories) {
     final map = <String, String>{};
     for (final category in categories) {
       map[category.id] = category.options.first.id;
@@ -147,7 +149,9 @@ class AvatarCreatorController extends ChangeNotifier {
   AvatarOption selectedOptionFor(String categoryId) {
     final category = categoryById(categoryId);
     final optionId = _selection.selectedOptionFor(categoryId);
-    return optionId == null ? category.options.first : category.optionById(optionId);
+    return optionId == null
+        ? category.options.first
+        : category.optionById(optionId);
   }
 
   /// Devuelve la opción de color actualmente seleccionada para [categoryId],
@@ -163,8 +167,11 @@ class AvatarCreatorController extends ChangeNotifier {
     final category = categoryById(categoryId);
     final colorOptions = category.colorOptions;
     if (colorOptions == null) return null;
-    final optionId = _selection.selectedOptionFor(_colorSelectionKey(categoryId));
-    return optionId == null ? colorOptions.first : category.colorOptionById(optionId);
+    final optionId =
+        _selection.selectedOptionFor(_colorSelectionKey(categoryId));
+    return optionId == null
+        ? colorOptions.first
+        : category.colorOptionById(optionId);
   }
 
   /// Registra que, dentro de la fila de color de [categoryId], el usuario
@@ -246,7 +253,8 @@ class AvatarCreatorController extends ChangeNotifier {
   /// inmutable, así que esto crea una instancia nueva en vez de mutar la
   /// anterior) y notifica a los widgets que escuchan.
   void selectOption(String categoryId, String optionId) {
-    _selection = _selection.withOption(categoryId: categoryId, optionId: optionId);
+    _selection =
+        _selection.withOption(categoryId: categoryId, optionId: optionId);
     notifyListeners();
   }
 
@@ -286,10 +294,12 @@ class AvatarCreatorController extends ChangeNotifier {
   Future<Uint8List> _capturePreviewPng() async {
     final renderObject = previewBoundaryKey.currentContext?.findRenderObject();
     if (renderObject is! RenderRepaintBoundary) {
-      throw StateError('El preview del avatar no está disponible para capturar.');
+      throw StateError(
+          'El preview del avatar no está disponible para capturar.');
     }
     final ui.Image image = await renderObject.toImage(pixelRatio: 3);
-    final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? byteData =
+        await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) {
       throw StateError('No fue posible generar la imagen del avatar.');
     }
@@ -318,7 +328,8 @@ class AvatarCreatorController extends ChangeNotifier {
     notifyListeners();
     try {
       final Uint8List bytes = await _capturePreviewPng();
-      return AvatarCreatorResult(selection: _selection.optionByCategory, imageBytes: bytes);
+      return AvatarCreatorResult(
+          selection: _selection.optionByCategory, imageBytes: bytes);
     } catch (error) {
       _saveError = error;
       rethrow;

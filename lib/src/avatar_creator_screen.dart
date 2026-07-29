@@ -294,7 +294,8 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                   delegate: _SliverHeaderDelegate(
                     minExtent: AvatarCategoryTabs.height,
                     maxExtent: AvatarCategoryTabs.height,
-                    builder: (context, shrinkOffset) => const AvatarCategoryTabs(),
+                    builder: (context, shrinkOffset) =>
+                        const AvatarCategoryTabs(),
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -332,17 +333,17 @@ class _AvatarCreatorScreenState extends State<AvatarCreatorScreen> {
                         selectedOptionId: selectedOptionId,
                         crossAxisCount: widget.config.gridCrossAxisCount,
                         maxOptions: widget.config.maxGridOptions,
-                        // `resolveAssetPath` combina la forma de cada
-                        // opción con el color actualmente elegido en esta
-                        // categoría (si tiene uno, ver
+                        // `resolveThumbnailAssetPath` combina la forma de
+                        // cada opción con el color actualmente elegido en
+                        // esta categoría (si tiene uno, ver
                         // [AvatarLayerCategory.colorOptions]). Para
                         // categorías sin fila de color,
                         // `selectedColorOptionFor` devuelve `null` y
-                        // `resolveAssetPath` simplemente deja
-                        // `option.assetPath` intacto — por eso este mismo
+                        // `resolveThumbnailAssetPath` simplemente deja la
+                        // ruta de la miniatura intacta — por eso este mismo
                         // callback sirve para ambos casos.
-                        resolveAssetPath: (option) =>
-                            activeCategory.resolveAssetPath(
+                        resolveThumbnailAssetPath: (option) =>
+                            activeCategory.resolveThumbnailAssetPath(
                           option,
                           controller.selectedColorOptionFor(activeCategory.id),
                         ),
@@ -430,7 +431,8 @@ class _SliverHeaderDelegate extends SliverPersistentHeaderDelegate {
   final _SliverHeaderBuilder builder;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return builder(context, shrinkOffset);
   }
 

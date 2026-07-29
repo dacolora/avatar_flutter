@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('AvatarOptionGrid reports the tapped option id', (tester) async {
     const options = [
-      AvatarOption.color(id: 'green', color: Colors.green, semanticLabel: 'Verde'),
+      AvatarOption.color(
+          id: 'green', color: Colors.green, semanticLabel: 'Verde'),
       AvatarOption.color(id: 'blue', color: Colors.blue, semanticLabel: 'Azul'),
     ];
 
@@ -20,7 +21,8 @@ void main() {
               body: AvatarOptionGrid(
                 options: options,
                 selectedOptionId: selectedOptionId,
-                onSelected: (optionId) => setState(() => selectedOptionId = optionId),
+                onSelected: (optionId) =>
+                    setState(() => selectedOptionId = optionId),
               ),
             );
           },
@@ -37,10 +39,16 @@ void main() {
     expect(selectedOptionId, 'blue');
   });
 
-  testWidgets('AvatarOptionGrid llama a resolveAssetPath por cada opción, en vez de usar option.assetPath directo', (tester) async {
+  testWidgets(
+      'AvatarOptionGrid llama a resolveThumbnailAssetPath por cada opción, en vez de usar option.assetPath directo',
+      (tester) async {
     const options = [
-      AvatarOption.layer(id: '1', assetPath: 'assets/avatar/hair/Color={color}, Expression=1.svg'),
-      AvatarOption.layer(id: '2', assetPath: 'assets/avatar/hair/Color={color}, Expression=2.svg'),
+      AvatarOption.layer(
+          id: '1',
+          assetPath: 'assets/avatar/hair/Color={color}, Expression=1.svg'),
+      AvatarOption.layer(
+          id: '2',
+          assetPath: 'assets/avatar/hair/Color={color}, Expression=2.svg'),
     ];
     final resolvedPaths = <String>[];
 
@@ -50,7 +58,7 @@ void main() {
           body: AvatarOptionGrid(
             options: options,
             selectedOptionId: '1',
-            resolveAssetPath: (option) {
+            resolveThumbnailAssetPath: (option) {
               final resolved = option.assetPath!.replaceFirst('{color}', '3');
               resolvedPaths.add(resolved);
               return resolved;
@@ -67,10 +75,12 @@ void main() {
     ]);
   });
 
-  testWidgets('AvatarOptionGrid enforces the 10-item spec limit', (tester) async {
+  testWidgets('AvatarOptionGrid enforces the 11-item spec limit',
+      (tester) async {
     final tooManyOptions = List.generate(
-      11,
-      (index) => AvatarOption.layer(id: 'body-$index', assetPath: 'assets/avatar/body/Property 1=1.svg'),
+      12,
+      (index) => AvatarOption.layer(
+          id: 'body-$index', assetPath: 'assets/avatar/body/Property 1=1.svg'),
     );
 
     expect(

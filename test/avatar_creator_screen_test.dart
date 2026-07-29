@@ -12,18 +12,24 @@ import 'package:flutter_test/flutter_test.dart';
 /// para leer de `SharedPreferences`) se resuelve antes de mostrar la
 /// pantalla completa.
 void main() {
-  testWidgets('sin initialSelection, abre directo con la primera opción de cada categoría', (tester) async {
+  testWidgets(
+      'sin initialSelection, abre directo con la primera opción de cada categoría',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen()),
     );
     await tester.pumpAndSettle();
 
     // La categoría activa por defecto es la primera del catálogo
-    // (Vestuario); su etiqueta de sección debe estar visible.
-    expect(find.text('Vestuario'), findsWidgets);
+    // (Vestuario, de tipo layerWithColor); sus dos etiquetas de sección
+    // deben estar visibles.
+    expect(find.text('Color de vestuario'), findsWidgets);
+    expect(find.text('Estilo de vestuario'), findsWidgets);
   });
 
-  testWidgets('espera el Future de initialSelection antes de construir el controlador', (tester) async {
+  testWidgets(
+      'espera el Future de initialSelection antes de construir el controlador',
+      (tester) async {
     final completer = Future<Map<String, String>>.delayed(
       const Duration(milliseconds: 50),
       () => const {'background': 'blue'},
@@ -44,10 +50,11 @@ void main() {
 
     // Una vez resuelto, el indicador desaparece y la pantalla se construye.
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Vestuario'), findsWidgets);
+    expect(find.text('Color de vestuario'), findsWidgets);
   });
 
-  testWidgets('cambiar de tab conserva la selección de las demás categorías', (tester) async {
+  testWidgets('cambiar de tab conserva la selección de las demás categorías',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen()),
     );
@@ -63,7 +70,9 @@ void main() {
     expect(find.text('Forma del pelo'), findsWidgets);
   });
 
-  testWidgets('elegir un color de pelo distinto no rompe la pantalla y conserva la forma elegida', (tester) async {
+  testWidgets(
+      'elegir un color de pelo distinto no rompe la pantalla y conserva la forma elegida',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen()),
     );
@@ -100,7 +109,9 @@ void main() {
     expect(find.bySemanticsLabel('Forma de pelo 3'), findsOneWidget);
   });
 
-  testWidgets('abrir "Color de fondo" no lanza excepción (regresión: sus opciones son colores puros, sin assetPath)', (tester) async {
+  testWidgets(
+      'abrir "Color de fondo" no lanza excepción (regresión: sus opciones son colores puros, sin assetPath)',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen()),
     );
@@ -113,20 +124,24 @@ void main() {
     expect(find.text('Color de fondo'), findsWidgets);
   });
 
-  testWidgets('Accesorios abre con "Sin accesorios" preseleccionado', (tester) async {
+  testWidgets(
+      'Vestuario abre con su fila de color (es layerWithColor, no una cuadrícula simple)',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen()),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('Accesorios'));
-    await tester.pumpAndSettle();
-
+    // Vestuario ya es la categoría activa por defecto (es la primera del
+    // catálogo), así que no hace falta tocar su tab.
     expect(tester.takeException(), isNull);
-    expect(find.bySemanticsLabel('Sin accesorios'), findsOneWidget);
+    expect(find.text('Color de vestuario'), findsWidgets);
+    expect(find.text('Estilo de vestuario'), findsWidgets);
   });
 
-  testWidgets('al hacer scroll, el preview se encoge (sin desaparecer) y los tabs de categoría siguen tocables', (tester) async {
+  testWidgets(
+      'al hacer scroll, el preview se encoge (sin desaparecer) y los tabs de categoría siguen tocables',
+      (tester) async {
     const config = AvatarCreatorConfig();
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen(config: config)),
@@ -157,10 +172,13 @@ void main() {
     // Al volver a subir el scroll, el preview se expande de nuevo.
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 1000));
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(AvatarPreview)).height, config.previewExpandedHeight);
+    expect(tester.getSize(find.byType(AvatarPreview)).height,
+        config.previewExpandedHeight);
   });
 
-  testWidgets('el canal puede personalizar los altos expandido/encogido del preview', (tester) async {
+  testWidgets(
+      'el canal puede personalizar los altos expandido/encogido del preview',
+      (tester) async {
     const config = AvatarCreatorConfig(
       previewExpandedHeight: 300,
       previewCollapsedHeight: 120,
@@ -178,7 +196,9 @@ void main() {
     expect(tester.getSize(find.byType(AvatarPreview)).height, 120);
   });
 
-  testWidgets('los tabs de categoría tienen fondo opaco (regresión: el body scrolleado se veía "a través" de ellos)', (tester) async {
+  testWidgets(
+      'los tabs de categoría tienen fondo opaco (regresión: el body scrolleado se veía "a través" de ellos)',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AvatarCreatorScreen()),
     );
@@ -188,10 +208,12 @@ void main() {
     // con el fondo, y uno por cada botón de tab): el primero en el árbol es
     // siempre el exterior, que es el que debe tener el fondo opaco.
     final tabsContainer = tester.widget<Container>(
-      find.descendant(
-        of: find.byType(AvatarCategoryTabs),
-        matching: find.byType(Container),
-      ).first,
+      find
+          .descendant(
+            of: find.byType(AvatarCategoryTabs),
+            matching: find.byType(Container),
+          )
+          .first,
     );
     final decoration = tabsContainer.decoration as BoxDecoration;
 
@@ -351,7 +373,8 @@ void main() {
           // shapeSectionLabel se omite a propósito, para forzar el
           // fallback a category.label (ver AvatarCreatorScreen.build).
           options: const [
-            AvatarOption.layer(id: 'hair-1', assetPath: 'assets/avatar/hair/1.svg'),
+            AvatarOption.layer(
+                id: 'hair-1', assetPath: 'assets/avatar/hair/1.svg'),
           ],
           colorOptions: const [
             AvatarOption.color(id: 'gray', color: Colors.grey),

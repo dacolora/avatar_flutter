@@ -21,7 +21,7 @@ class CustomizationGalleryScreen extends StatelessWidget {
           _DemoCard(
             title: '1. Por defecto',
             description: 'AvatarCreatorConfig() sin ningun parametro: catalogo '
-                'oficial, 3 columnas, alturas 249/160, textos por defecto. '
+                'oficial, 2 columnas, alturas 249/160, textos por defecto. '
                 'Es lo que obtiene un canal que no personaliza nada.',
             onOpen: () => _openDemo(context, const AvatarCreatorConfig()),
           ),
@@ -242,7 +242,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   double _collapsedHeight = 160;
   int _gridCrossAxisCount = 2;
   int _maxGridOptions = 10;
-  int _maxRowOptions = 5;
+  int _maxRowOptions = 6;
   final _titleController = TextEditingController(text: 'Crear avatar');
   final _saveButtonController = TextEditingController(text: 'Guardar');
 

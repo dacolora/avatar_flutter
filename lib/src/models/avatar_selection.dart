@@ -64,7 +64,8 @@ class AvatarSelection extends Equatable {
   /// `categoryId`. Como los mapas literales se procesan de izquierda a
   /// derecha, si `categoryId` ya existía en el mapa original, el valor
   /// nuevo (`optionId`) es el que queda.
-  AvatarSelection withOption({required String categoryId, required String optionId}) {
+  AvatarSelection withOption(
+      {required String categoryId, required String optionId}) {
     return AvatarSelection({...optionByCategory, categoryId: optionId});
   }
 

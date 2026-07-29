@@ -5,22 +5,22 @@ import 'avatar_selectable_thumbnail.dart';
 
 /// Fila horizontal de opciones (#7 "Elementos seleccionables — Row" de la
 /// especificación). Se usa para las filas de color de las categorías de
-/// tipo [AvatarCategoryKind.layerWithColor] (Cabello, Rostro).
+/// tipo [AvatarCategoryKind.layerWithColor] (Vestuario, Cabello, Rostro).
 ///
 /// Igual que [AvatarOptionGrid], recibe directamente la lista de [options] a
 /// mostrar en vez de una [AvatarLayerCategory] completa — en este caso, casi
 /// siempre `category.colorOptions` — para no acoplarse a ningún concepto de
 /// categoría, fondo o cuadrícula.
 ///
-/// Según la especificación de diseño, admite como máximo 5 opciones — el
-/// valor por defecto de [maxOptions], que el canal puede cambiar (ver
-/// [AvatarCreatorConfig.maxRowOptions]).
+/// Admite como máximo 6 opciones por defecto — el máximo real que usa el
+/// catálogo oficial (los 6 colores de Vestuario) — valor de [maxOptions]
+/// que el canal puede cambiar (ver [AvatarCreatorConfig.maxRowOptions]).
 class AvatarOptionRow extends StatelessWidget {
   AvatarOptionRow({
     required this.options,
     required this.selectedOptionId,
     required this.onSelected,
-    this.maxOptions = 5,
+    this.maxOptions = 6,
     super.key,
   }) : assert(
           options.length <= maxOptions,
@@ -37,7 +37,7 @@ class AvatarOptionRow extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   /// Máximo de opciones admitidas. Ver
-  /// [AvatarCreatorConfig.maxRowOptions] — 5 por defecto.
+  /// [AvatarCreatorConfig.maxRowOptions] — 6 por defecto.
   final int maxOptions;
 
   @override

@@ -36,8 +36,8 @@ class AvatarCreatorConfig {
     this.previewExpandedHeight = 249,
     this.previewCollapsedHeight = 160,
     this.gridCrossAxisCount = 2,
-    this.maxGridOptions = 10,
-    this.maxRowOptions = 5,
+    this.maxGridOptions = 11,
+    this.maxRowOptions = 6,
     this.onView,
     this.onSave,
     this.onSaveSuccess,
@@ -148,18 +148,17 @@ class AvatarCreatorConfig {
   final int gridCrossAxisCount;
 
   /// Máximo de opciones que admite la cuadrícula de una categoría
-  /// ([AvatarOptionGrid]) — 10 por defecto, el límite de la especificación
-  /// de diseño oficial. Solo debería subirse si el canal agrega una
-  /// categoría propia (ver [categories]) que de verdad necesita más
-  /// opciones; las categorías del catálogo oficial nunca superan este
-  /// límite.
+  /// ([AvatarOptionGrid]) — 11 por defecto (el máximo real que usa el
+  /// catálogo oficial: las 11 formas de Cabello). Solo debería subirse más
+  /// si el canal agrega una categoría propia (ver [categories]) que de
+  /// verdad necesita todavía más opciones.
   final int maxGridOptions;
 
   /// Máximo de opciones que admite la fila de color de una categoría
-  /// [AvatarCategoryKind.layerWithColor] ([AvatarOptionRow]) — 5 por
-  /// defecto, el límite de la especificación de diseño oficial. Igual que
-  /// [maxGridOptions], solo debería subirse para una categoría propia del
-  /// canal.
+  /// [AvatarCategoryKind.layerWithColor] ([AvatarOptionRow]) — 6 por
+  /// defecto (el máximo real que usa el catálogo oficial: los 6 colores de
+  /// Vestuario). Igual que [maxGridOptions], solo debería subirse más para
+  /// una categoría propia del canal.
   final int maxRowOptions;
 
   /// ### Callbacks: el punto de extensión principal de la librería
@@ -175,11 +174,10 @@ class AvatarCreatorConfig {
   /// todos son opcionales y se llaman con `?.call()`, que no hace nada si el
   /// callback es `null`).
   ///
-  /// Los nombres de evento sugeridos para tagueo/analítica viven en
-  /// [AvatarAnalyticsEvents], pero son solo una **guía de nombres** — la
-  /// librería nunca dispara ningún evento de analítica por sí misma. Es
-  /// responsabilidad exclusiva del canal decidir si, cuándo y cómo registrar
-  /// estos eventos.
+  /// La librería nunca dispara ningún evento de analítica por sí misma: es
+  /// responsabilidad exclusiva del canal decidir si, cuándo, con qué nombre
+  /// y con qué herramienta registrar estos eventos (por ejemplo, en
+  /// `onView`, llamar a `analytics.track('avatar_creator_view')`).
   ///
   /// Se llama justo después de que la pantalla termina de construirse por
   /// primera vez (equivalente a "el usuario ya está viendo el creador de

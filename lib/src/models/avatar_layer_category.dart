@@ -11,19 +11,21 @@ import 'avatar_option.dart';
 /// sin adivinar qué significa un `true`/`false`) y para que el compilador
 /// avise en cada `switch` si en el futuro se agrega un tercer valor.
 enum AvatarCategoryKind {
-  /// La categoría se presenta con una única cuadrícula
-  /// ([AvatarOptionGrid], máximo 10 opciones). Sirve tanto para categorías
-  /// de capas ilustradas (Vestuario, Accesorios) como para una categoría de
-  /// colores sólidos sin selector de forma (Color de fondo) — a la
+  /// La categoría se presenta con una única cuadrícula ([AvatarOptionGrid],
+  /// máximo [AvatarCreatorConfig.maxGridOptions] opciones). Sirve tanto
+  /// para categorías de capas ilustradas como para una categoría de colores
+  /// sólidos sin selector de forma — hoy, solo "Color de fondo" — a la
   /// cuadrícula no le importa si sus opciones son SVGs o colores, solo las
   /// dibuja (ver [AvatarSelectableThumbnail]).
   layer,
 
   /// La categoría combina **dos** selectores en la misma pantalla: primero
-  /// una fila de colores ([AvatarOptionRow], máximo 5, ver [colorOptions])
-  /// y debajo una cuadrícula de formas ilustradas ([AvatarOptionGrid],
-  /// máximo 10, ver [AvatarLayerCategory.options]). Hoy la usan Cabello y
-  /// Rostro (tono de piel + expresión).
+  /// una fila de colores ([AvatarOptionRow], máximo
+  /// [AvatarCreatorConfig.maxRowOptions], ver [colorOptions]) y debajo una
+  /// cuadrícula de formas ilustradas ([AvatarOptionGrid], máximo
+  /// [AvatarCreatorConfig.maxGridOptions], ver
+  /// [AvatarLayerCategory.options]). Hoy la usan Vestuario, Cabello y
+  /// Rostro (color + estilo/forma/expresión).
   ///
   /// El color no se "aplica" a la forma en tiempo de ejecución: el equipo de
   /// diseño entrega un SVG distinto ya coloreado por cada combinación de
@@ -31,7 +33,7 @@ enum AvatarCategoryKind {
   /// elegir un color en la fila simplemente hace que se muestre el archivo
   /// correspondiente a esa combinación — tanto en la forma ya seleccionada
   /// como en **todas** las demás miniaturas de la cuadrícula, para que, por
-  /// ejemplo, si el usuario elige "morado" en "Color del pelo", los 10
+  /// ejemplo, si el usuario elige "morado" en "Color del pelo", todos los
   /// cortes de "Forma del pelo" se vean morados.
   layerWithColor,
 }
@@ -64,7 +66,8 @@ class AvatarLayerCategory {
     this.colorSectionLabel,
     this.shapeSectionLabel,
     this.isBackground = false,
-  })  : assert(options.length > 0, 'Una categoría debe tener al menos una opción'),
+  })  : assert(
+            options.length > 0, 'Una categoría debe tener al menos una opción'),
         assert(
           kind == AvatarCategoryKind.layerWithColor ||
               (colorOptions == null && colorSectionLabel == null),
@@ -72,8 +75,10 @@ class AvatarLayerCategory {
         ),
         assert(
           kind != AvatarCategoryKind.layerWithColor ||
-              (colorOptions != null && colorOptions.length > 0 && colorSectionLabel != null),
-          'kind: layerWithColor requiere colorOptions (1 a 5 elementos) y colorSectionLabel',
+              (colorOptions != null &&
+                  colorOptions.length > 0 &&
+                  colorSectionLabel != null),
+          'kind: layerWithColor requiere colorOptions (1 a 6 elementos por defecto, ver AvatarCreatorConfig.maxRowOptions) y colorSectionLabel',
         ),
         assert(
           !isBackground || kind == AvatarCategoryKind.layer,
@@ -156,7 +161,8 @@ class AvatarLayerCategory {
   /// como valor de respaldo seguro, para que la pantalla nunca se rompa por
   /// datos desactualizados.
   AvatarOption optionById(String optionId) =>
-      options.firstWhere((option) => option.id == optionId, orElse: () => options.first);
+      options.firstWhere((option) => option.id == optionId,
+          orElse: () => options.first);
 
   /// Igual que [optionById], pero busca dentro de [colorOptions] en vez de
   /// [options]. Devuelve `null` si esta categoría no tiene [colorOptions]
@@ -164,35 +170,53 @@ class AvatarLayerCategory {
   AvatarOption? colorOptionById(String optionId) {
     final options = colorOptions;
     if (options == null) return null;
-    return options.firstWhere((option) => option.id == optionId, orElse: () => options.first);
+    return options.firstWhere((option) => option.id == optionId,
+        orElse: () => options.first);
   }
 
-  /// Calcula la ruta real del SVG de [shapeOption] dentro de esta categoría,
-  /// o `null` si [shapeOption] no tiene ninguna ilustración que dibujar.
+  /// Calcula la ruta real del SVG **de preview** de [shapeOption] dentro de
+  /// esta categoría, o `null` si [shapeOption] no tiene ninguna ilustración
+  /// que dibujar.
   ///
-  /// En la mayoría de las categorías (Vestuario, Accesorios) cada opción
-  /// tiene una ruta fija: para esas, este método simplemente devuelve
+  /// En categorías sin fila de color (por ejemplo, "Color de fondo") cada
+  /// opción tiene una ruta fija: este método simplemente devuelve
   /// `shapeOption.assetPath` sin tocarlo (y [colorOption] se ignora,
   /// típicamente porque es `null`).
   ///
-  /// En Cabello y Rostro, en cambio, el color **viene incluido en el propio
-  /// SVG** — el equipo de diseño entrega un archivo distinto por cada
-  /// combinación de forma y color (por ejemplo, `Color=3, Expression=5.svg`)
-  /// — así que `shapeOption.assetPath` es en realidad una plantilla con el
-  /// marcador `{color}` (ver [options]), y este método lo reemplaza por el
-  /// id de [colorOption] (que coincide con el número usado en el nombre del
-  /// archivo, por ejemplo `'3'`).
+  /// En Vestuario, Cabello y Rostro, en cambio, el color **viene incluido en
+  /// el propio SVG** — el equipo de diseño entrega un archivo distinto por
+  /// cada combinación de forma y color (por ejemplo, `hair_3_5.svg` para
+  /// color `3`, forma `5`) — así que `shapeOption.assetPath` es en realidad
+  /// una plantilla con el marcador `{color}` (ver [options]), y este método
+  /// lo reemplaza por el id de [colorOption] (que coincide con el número
+  /// usado en el nombre del archivo, por ejemplo `'3'`).
   ///
   /// Devuelve `null` cuando [shapeOption] no tiene `assetPath` — porque es
   /// una opción de color pura (por ejemplo, una de las de "Color de fondo",
   /// donde `options` son en realidad [AvatarOption.color]) o porque es
-  /// [AvatarOption.none] ("Sin accesorios"). En ambos casos no hay ningún
-  /// SVG que dibujar: quien llama a este método (ver
-  /// [AvatarCreatorController.layerAssetPaths] y
-  /// [AvatarOptionGrid.resolveAssetPath]) debe manejar ese `null` sin
+  /// [AvatarOption.none]. En ambos casos no hay ningún SVG que dibujar:
+  /// quien llama a este método (ver
+  /// [AvatarCreatorController.layerAssetPaths]) debe manejar ese `null` sin
   /// intentar renderizar nada.
-  String? resolveAssetPath(AvatarOption shapeOption, AvatarOption? colorOption) {
+  String? resolveAssetPath(
+      AvatarOption shapeOption, AvatarOption? colorOption) {
     final template = shapeOption.assetPath;
+    if (template == null) return null;
+    if (colorOption == null) return template;
+    return template.replaceFirst('{color}', colorOption.id);
+  }
+
+  /// Igual que [resolveAssetPath], pero para la ruta **de la miniatura**
+  /// seleccionable ([AvatarOptionGrid]) en vez de la del preview.
+  ///
+  /// Usa [AvatarOption.thumbnailAssetPath] como plantilla si [shapeOption]
+  /// define uno; si no (el caso normal), cae de vuelta a
+  /// `shapeOption.assetPath` — es decir, a la misma ruta que
+  /// [resolveAssetPath] — así que una opción sin miniatura propia se sigue
+  /// viendo igual que antes de que existiera esta distinción.
+  String? resolveThumbnailAssetPath(
+      AvatarOption shapeOption, AvatarOption? colorOption) {
+    final template = shapeOption.thumbnailAssetPath ?? shapeOption.assetPath;
     if (template == null) return null;
     if (colorOption == null) return template;
     return template.replaceFirst('{color}', colorOption.id);

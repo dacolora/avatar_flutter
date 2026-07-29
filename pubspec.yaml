@@ -23,6 +23,8 @@ dev_dependencies:
 flutter:
   assets:
     - assets/avatar/face/
+    - assets/avatar/ct_face/
     - assets/avatar/hair/
+    - assets/avatar/ct_hair/
     - assets/avatar/body/
-    - assets/avatar/extra/
+    - assets/avatar/ct_body/

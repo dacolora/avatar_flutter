@@ -93,7 +93,8 @@ class AvatarSelectableThumbnail extends StatelessWidget {
                 ? const ColoredBox(
                     color: Color(0xFFF2F2F3),
                     child: Center(
-                      child: Icon(Icons.block_outlined, color: Color(0xFF8A8A8E)),
+                      child:
+                          Icon(Icons.block_outlined, color: Color(0xFF8A8A8E)),
                     ),
                   )
                 : ColoredBox(
@@ -101,13 +102,21 @@ class AvatarSelectableThumbnail extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(8),
                       child: SvgPicture.asset(
-                        assetPathOverride ?? option.assetPath!,
+                        // Orden de prioridad: la ruta ya resuelta que traiga
+                        // AvatarOptionGrid (assetPathOverride, con el color
+                        // ya sustituido); si no hay override, la miniatura
+                        // propia de la opción (thumbnailAssetPath, para
+                        // cuando el SVG del preview no se ve bien de chico);
+                        // y solo si tampoco hay eso, el mismo asset del
+                        // preview (assetPath).
+                        assetPathOverride ??
+                            option.thumbnailAssetPath ??
+                            option.assetPath!,
                         // `option.assetPackage` sigue siendo el paquete
-                        // correcto incluso cuando `assetPathOverride` trae
-                        // una ruta ya resuelta con el color elegido (ver
-                        // AvatarLayerCategory.resolveAssetPath): el color
-                        // solo cambia el nombre del archivo dentro de la
-                        // misma categoría, nunca en qué paquete vive.
+                        // correcto para cualquiera de las tres rutas de
+                        // arriba: el color o el tamaño solo cambian el
+                        // nombre del archivo dentro de la misma categoría,
+                        // nunca en qué paquete vive.
                         package: option.assetPackage,
                         fit: BoxFit.contain,
                       ),

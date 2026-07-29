@@ -9,35 +9,35 @@ import '../models/avatar_option.dart';
 /// Esta función es, junto con [AvatarCreatorConfig], la otra mitad de la
 /// frontera librería/canal: aquí es donde vive el contenido que el equipo de
 /// diseño de Bancolombia definió como "el" catálogo oficial (Vestuario,
-/// Cabello, Rostro, Accesorios y Color de fondo). El canal normalmente **no**
-/// llama a esta función directamente ni la sobreescribe: [AvatarCreatorScreen]
-/// la usa automáticamente cuando el canal no provee
-/// [AvatarCreatorConfig.categories].
+/// Cabello, Rostro y Color de fondo). El canal normalmente **no** llama a
+/// esta función directamente ni la sobreescribe: [AvatarCreatorScreen] la usa
+/// automáticamente cuando el canal no provee [AvatarCreatorConfig.categories].
 ///
 /// El **orden** de la lista que devuelve importa por dos motivos a la vez:
 /// es el orden de los tabs de navegación que ve el usuario, y es también el
 /// orden de apilado (z-index) en el preview — cada capa se dibuja encima de
-/// la anterior, de más al fondo (Vestuario) a más al frente (Accesorios). La
+/// la anterior, de más al fondo (Vestuario) a más al frente (Rostro). La
 /// categoría de fondo ("background") no cuenta para el apilado: no es una
 /// capa SVG, es el color detrás de todas ellas (ver
 /// [AvatarLayerCategory.isBackground]).
 ///
 /// ### Cómo están armados los assets reales
-/// * **Vestuario** y **Accesorios**: cada opción es un SVG completo e
-///   independiente, entregado por diseño con nombres de archivo exportados
-///   directamente desde Figma (por ejemplo, `Property 1=3.svg`,
-///   `Style=Style4.svg`). No tienen fila de color: el color, si lo hay, ya
-///   viene dentro de cada diseño.
-/// * **Cabello** y **Rostro**: son categorías de tipo
-///   [AvatarCategoryKind.layerWithColor]. A diferencia de Vestuario/Accesorios,
-///   aquí diseño entregó un archivo distinto **por cada combinación** de
-///   forma y color (30 SVGs por categoría: 6 formas × 5 colores, con nombres
-///   como `Color=3, Expression=5.svg`) — el color viene incluido en el
-///   propio SVG, no se aplica con ningún filtro en tiempo de ejecución. Por
-///   eso, el `assetPath` de cada opción de forma en estas dos categorías es
-///   una **plantilla** con el marcador `{color}` (ver
-///   [AvatarLayerCategory.resolveAssetPath], que sustituye ese marcador por
-///   el id del color elegido).
+/// Vestuario, Cabello y Rostro son las tres categorías de tipo
+/// [AvatarCategoryKind.layerWithColor]: diseño entregó un archivo distinto
+/// **por cada combinación** de color y forma (por ejemplo, 6 colores × 8
+/// estilos = 48 SVGs para Vestuario) — el color viene incluido en el propio
+/// SVG, no se aplica con ningún filtro en tiempo de ejecución. Por eso, el
+/// `assetPath` de cada opción de forma en estas categorías es una
+/// **plantilla** con el marcador `{color}` (ver
+/// [AvatarLayerCategory.resolveAssetPath], que sustituye ese marcador por el
+/// id del color elegido).
+///
+/// Cada combinación, además, tiene **dos** archivos: uno para el preview
+/// (`assets/avatar/$id/${id}_{color}_$forma.svg`, pensado para apilarse con
+/// las demás capas dentro del círculo) y uno para su miniatura seleccionable
+/// (`assets/avatar/ct_$id/ct_${id}_{color}_$forma.svg`, recortado para verse
+/// bien solo dentro de un cuadro chico de la cuadrícula) — ver
+/// [AvatarOption.thumbnailAssetPath] para la razón de esta duplicación.
 ///
 /// Todas las opciones de este catálogo fijan
 /// `assetPackage: 'avatar_flutter'` porque sus SVGs viven empaquetados
@@ -47,62 +47,72 @@ import '../models/avatar_option.dart';
 /// propia app, no desde este paquete.
 List<AvatarLayerCategory> defaultAvatarCatalog() {
   return [
-    _wardrobeLikeCategory(
+    _coloredCategory(
       id: 'body',
       label: 'Vestuario',
       icon: Icons.checkroom_outlined,
-      semanticPrefix: 'Vestuario',
-      assetPaths: [
-        for (var i = 1; i <= 6; i++) 'assets/avatar/body/Property 1=$i.svg',
+      colorSectionLabel: 'Color de vestuario',
+      shapeSectionLabel: 'Estilo de vestuario',
+      shapeSemanticPrefix: 'Vestuario',
+      shapeCount: 8,
+      colorOptions: const [
+        AvatarOption.color(
+            id: '1', color: Color(0xFFFDDA24), semanticLabel: 'Amarillo'),
+        AvatarOption.color(
+            id: '2', color: Color(0xFFF5B6CD), semanticLabel: 'Rosado'),
+        AvatarOption.color(
+            id: '3', color: Color(0xFFFF7F41), semanticLabel: 'Naranja'),
+        AvatarOption.color(
+            id: '4', color: Color(0xFF59CBE8), semanticLabel: 'Celeste'),
+        AvatarOption.color(
+            id: '5', color: Color(0xFF9063CD), semanticLabel: 'Morado'),
+        AvatarOption.color(
+            id: '6', color: Color(0xFF00C389), semanticLabel: 'Verde'),
       ],
     ),
-    _hairOrFaceCategory(
+    _coloredCategory(
       id: 'hair',
       label: 'Cabello',
       icon: Icons.content_cut,
       colorSectionLabel: 'Color del pelo',
       shapeSectionLabel: 'Forma del pelo',
       shapeSemanticPrefix: 'Forma de pelo',
+      shapeCount: 11,
       colorOptions: const [
-        AvatarOption.color(id: '1', color: Color(0xFFFF7F41), semanticLabel: 'Naranja'),
-        AvatarOption.color(id: '2', color: Color(0xFF9063CD), semanticLabel: 'Morado'),
-        AvatarOption.color(id: '3', color: Color(0xFFFDDA24), semanticLabel: 'Amarillo'),
-        AvatarOption.color(id: '4', color: Color(0xFF2C2A29), semanticLabel: 'Negro'),
-        AvatarOption.color(id: '5', color: Color(0xFFB3B5B8), semanticLabel: 'Gris'),
+        AvatarOption.color(
+            id: '1', color: Color(0xFFFF7F41), semanticLabel: 'Naranja'),
+        AvatarOption.color(
+            id: '2', color: Color(0xFF9063CD), semanticLabel: 'Morado'),
+        // Antes "Amarillo" (#FDDA24): el arte de esta combinación cambió a
+        // un tono café/oliva real (#867313), así que el nombre se actualizó
+        // para que coincida con lo que el usuario en verdad ve.
+        AvatarOption.color(
+            id: '3', color: Color(0xFF867313), semanticLabel: 'Café'),
+        AvatarOption.color(
+            id: '4', color: Color(0xFF2C2A29), semanticLabel: 'Negro'),
+        AvatarOption.color(
+            id: '5', color: Color(0xFFB3B5B8), semanticLabel: 'Gris'),
       ],
     ),
-    _hairOrFaceCategory(
+    _coloredCategory(
       id: 'face',
       label: 'Rostro',
       icon: Icons.face_outlined,
       colorSectionLabel: 'Tono de piel',
       shapeSectionLabel: 'Expresión',
       shapeSemanticPrefix: 'Expresión',
+      shapeCount: 6,
       colorOptions: const [
-        AvatarOption.color(id: '1', color: Color(0xFFE4AC7B), semanticLabel: 'Tono de piel 1'),
-        AvatarOption.color(id: '2', color: Color(0xFFF3D8C1), semanticLabel: 'Tono de piel 2'),
-        AvatarOption.color(id: '3', color: Color(0xFFFFE5D1), semanticLabel: 'Tono de piel 3'),
-        AvatarOption.color(id: '4', color: Color(0xFF8C4D18), semanticLabel: 'Tono de piel 4'),
-        AvatarOption.color(id: '5', color: Color(0xFFCCA07C), semanticLabel: 'Tono de piel 5'),
-      ],
-    ),
-    _wardrobeLikeCategory(
-      id: 'extra',
-      label: 'Accesorios',
-      icon: Icons.auto_awesome_outlined,
-      semanticPrefix: 'Accesorio',
-      // A diferencia de Vestuario, Accesorios sí tiene una opción para "no
-      // llevar ninguno" (a diferencia del resto de categorías, un accesorio
-      // es opcional por naturaleza). Al ser la primera, queda preseleccionada
-      // por defecto en un avatar nuevo.
-      noneOptionLabel: 'Sin accesorios',
-      assetPaths: const [
-        'assets/avatar/extra/Style=1.svg',
-        'assets/avatar/extra/Style=Style2.svg',
-        'assets/avatar/extra/Style=Style3.svg',
-        'assets/avatar/extra/Style=Style4.svg',
-        'assets/avatar/extra/Style=Style5.svg',
-        'assets/avatar/extra/Style=Style6.svg',
+        AvatarOption.color(
+            id: '1', color: Color(0xFFE4AC7B), semanticLabel: 'Tono de piel 1'),
+        AvatarOption.color(
+            id: '2', color: Color(0xFFF3D8C1), semanticLabel: 'Tono de piel 2'),
+        AvatarOption.color(
+            id: '3', color: Color(0xFFFFE5D1), semanticLabel: 'Tono de piel 3'),
+        AvatarOption.color(
+            id: '4', color: Color(0xFF8C4D18), semanticLabel: 'Tono de piel 4'),
+        AvatarOption.color(
+            id: '5', color: Color(0xFFCCA07C), semanticLabel: 'Tono de piel 5'),
       ],
     ),
     // A diferencia de las categorías de arriba, esta se construye
@@ -118,68 +128,46 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
       kind: AvatarCategoryKind.layer,
       isBackground: true,
       options: const [
-        AvatarOption.color(id: 'green', color: Color(0xFF5FB894), semanticLabel: 'Fondo verde'),
-        AvatarOption.color(id: 'orange', color: Color(0xFFE8946B), semanticLabel: 'Fondo naranja'),
-        AvatarOption.color(id: 'blue', color: Color(0xFF8FC5D6), semanticLabel: 'Fondo azul'),
-        AvatarOption.color(id: 'yellow', color: Color(0xFFF3D53C), semanticLabel: 'Fondo amarillo'),
-        AvatarOption.color(id: 'purple', color: Color(0xFFA48AD4), semanticLabel: 'Fondo morado'),
+        AvatarOption.color(
+            id: 'green',
+            color: Color(0xFF5FB894),
+            semanticLabel: 'Fondo verde'),
+        AvatarOption.color(
+            id: 'orange',
+            color: Color(0xFFE8946B),
+            semanticLabel: 'Fondo naranja'),
+        AvatarOption.color(
+            id: 'blue', color: Color(0xFF8FC5D6), semanticLabel: 'Fondo azul'),
+        AvatarOption.color(
+            id: 'yellow',
+            color: Color(0xFFF3D53C),
+            semanticLabel: 'Fondo amarillo'),
+        AvatarOption.color(
+            id: 'purple',
+            color: Color(0xFFA48AD4),
+            semanticLabel: 'Fondo morado'),
       ],
     ),
   ];
 }
 
-/// Construye una categoría simple ([AvatarCategoryKind.layer], sin fila de
-/// color) a partir de una lista de SVGs ya distintos entre sí — un archivo
-/// completo por opción, como los de Vestuario y Accesorios.
-///
-/// Si se pasa [noneOptionLabel], se agrega antes que todas las demás una
-/// opción [AvatarOption.none] con ese texto — para categorías donde "no
-/// llevar nada" es una elección válida (hoy, solo Accesorios). Al quedar
-/// primera en la lista, es la preseleccionada por defecto en un avatar nuevo
-/// (ver [AvatarCreatorController]).
-AvatarLayerCategory _wardrobeLikeCategory({
-  required String id,
-  required String label,
-  required IconData icon,
-  required String semanticPrefix,
-  required List<String> assetPaths,
-  String? noneOptionLabel,
-}) {
-  return AvatarLayerCategory(
-    id: id,
-    label: label,
-    icon: icon,
-    kind: AvatarCategoryKind.layer,
-    options: [
-      if (noneOptionLabel != null)
-        AvatarOption.none(id: 'none', semanticLabel: noneOptionLabel),
-      for (var i = 0; i < assetPaths.length; i++)
-        AvatarOption.layer(
-          id: '${i + 1}',
-          assetPath: assetPaths[i],
-          // Estos SVG viven empaquetados dentro de avatar_flutter, no en
-          // la app del canal — ver AvatarOption.assetPackage.
-          assetPackage: 'avatar_flutter',
-          semanticLabel: '$semanticPrefix ${i + 1}',
-        ),
-    ],
-  );
-}
-
 /// Construye una categoría de tipo [AvatarCategoryKind.layerWithColor] cuyos
-/// assets siguen la convención de Cabello/Rostro: 6 formas × 5 colores,
-/// nombradas `Color=$colorId, Expression=$shapeNumber.svg` dentro de
-/// `assets/avatar/$id/`.
+/// assets siguen la convención `${id}_{color}_{forma}.svg` (preview) /
+/// `ct_${id}_{color}_{forma}.svg` (miniatura), con [shapeCount] formas y
+/// tantos colores como traiga [colorOptions].
 ///
-/// El `assetPath` de cada forma generada aquí es una plantilla con el
-/// marcador `{color}` — ver [AvatarLayerCategory.resolveAssetPath].
-AvatarLayerCategory _hairOrFaceCategory({
+/// El `assetPath`/`thumbnailAssetPath` de cada forma generada aquí es una
+/// plantilla con el marcador `{color}` — ver
+/// [AvatarLayerCategory.resolveAssetPath] y
+/// [AvatarLayerCategory.resolveThumbnailAssetPath].
+AvatarLayerCategory _coloredCategory({
   required String id,
   required String label,
   required IconData icon,
   required String colorSectionLabel,
   required String shapeSectionLabel,
   required String shapeSemanticPrefix,
+  required int shapeCount,
   required List<AvatarOption> colorOptions,
 }) {
   return AvatarLayerCategory(
@@ -191,10 +179,12 @@ AvatarLayerCategory _hairOrFaceCategory({
     shapeSectionLabel: shapeSectionLabel,
     colorOptions: colorOptions,
     options: [
-      for (var shape = 1; shape <= 6; shape++)
+      for (var shape = 1; shape <= shapeCount; shape++)
         AvatarOption.layer(
           id: '$shape',
-          assetPath: 'assets/avatar/$id/Color={color}, Expression=$shape.svg',
+          assetPath: 'assets/avatar/$id/${id}_{color}_$shape.svg',
+          thumbnailAssetPath:
+              'assets/avatar/ct_$id/ct_${id}_{color}_$shape.svg',
           assetPackage: 'avatar_flutter',
           semanticLabel: '$shapeSemanticPrefix $shape',
         ),

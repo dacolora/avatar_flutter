@@ -60,7 +60,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     final json = prefs.getString(_selectionPrefsKey);
     if (json == null) return {};
-    print(json);
     return Map<String, String>.from(jsonDecode(json) as Map);
   }
 
@@ -91,10 +90,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         previewExpandedHeight: 249,
         previewCollapsedHeight: 160,
         // Hooks de tagueo sugeridos: el canal decide si/cómo los envía.
-        onView: () => debugPrint('tag: '),
-        onSave: () => debugPrint('tag: '),
-        onSaveSuccess: (_) => debugPrint('tag: '),
-        onSaveError: (_) => debugPrint('tag: '),
+        onView: () => debugPrint('tag: avatar_creator_view'),
+        onSave: () => debugPrint('tag: avatar_save'),
+        onSaveSuccess: (_) => debugPrint('tag: avatar_save_success'),
+        onSaveError: (_) => debugPrint('tag: avatar_save_error'),
       ),
     );
 

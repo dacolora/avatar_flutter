@@ -52,7 +52,8 @@ class AvatarCreatorScope extends InheritedNotifier<AvatarCreatorController> {
   /// pasar dentro de este paquete, ya que [AvatarCreatorScreen] siempre
   /// coloca uno antes de construir el resto de la pantalla.
   static AvatarCreatorController of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<AvatarCreatorScope>();
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<AvatarCreatorScope>();
     assert(
       scope != null,
       'AvatarCreatorScope.of() fue llamado fuera del árbol de AvatarCreatorScreen.',

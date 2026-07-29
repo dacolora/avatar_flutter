@@ -11,7 +11,8 @@ AvatarLayerCategory _backgroundCategory(String id, List<String> optionIds) {
     isBackground: true,
     options: [
       for (final optionId in optionIds)
-        AvatarOption.color(id: optionId, color: Colors.primaries[optionIds.indexOf(optionId)]),
+        AvatarOption.color(
+            id: optionId, color: Colors.primaries[optionIds.indexOf(optionId)]),
     ],
   );
 }
@@ -24,7 +25,8 @@ AvatarLayerCategory _layerCategory(String id, List<String> optionIds) {
     kind: AvatarCategoryKind.layer,
     options: [
       for (final optionId in optionIds)
-        AvatarOption.layer(id: optionId, assetPath: 'assets/avatar/$id/$optionId.svg'),
+        AvatarOption.layer(
+            id: optionId, assetPath: 'assets/avatar/$id/$optionId.svg'),
     ],
   );
 }
@@ -71,12 +73,15 @@ void main() {
     setUp(() {
       categories = [
         _layerCategory('body', ['body-1', 'body-2']),
-        _layerWithColorCategory('hair', ['hair-1', 'hair-2'], ['gray', 'purple']),
+        _layerWithColorCategory(
+            'hair', ['hair-1', 'hair-2'], ['gray', 'purple']),
         _backgroundCategory('background', ['green', 'blue']),
       ];
     });
 
-    test('preselects the first shape and color option of every category by default', () {
+    test(
+        'preselects the first shape and color option of every category by default',
+        () {
       final controller = AvatarCreatorController(categories: categories);
 
       expect(controller.selectedOptionFor('body').id, 'body-1');
@@ -86,7 +91,9 @@ void main() {
       expect(controller.activeCategoryId, 'body');
     });
 
-    test('selectedColorOptionFor returns null for categories without colorOptions', () {
+    test(
+        'selectedColorOptionFor returns null for categories without colorOptions',
+        () {
       final controller = AvatarCreatorController(categories: categories);
 
       expect(controller.selectedColorOptionFor('body'), isNull);
@@ -108,7 +115,9 @@ void main() {
       expect(controller.backgroundColor, Colors.primaries[1]);
     });
 
-    test('selectOption updates the shape selection without touching the color selection', () {
+    test(
+        'selectOption updates the shape selection without touching the color selection',
+        () {
       final controller = AvatarCreatorController(categories: categories);
       var notifications = 0;
       controller.addListener(() => notifications++);
@@ -122,7 +131,9 @@ void main() {
       expect(controller.selectedOptionFor('body').id, 'body-1');
     });
 
-    test('selectColorOption updates the color selection without touching the shape selection', () {
+    test(
+        'selectColorOption updates the color selection without touching the shape selection',
+        () {
       final controller = AvatarCreatorController(categories: categories);
       var notifications = 0;
       controller.addListener(() => notifications++);
@@ -134,7 +145,8 @@ void main() {
       expect(notifications, 1);
     });
 
-    test('selectCategory switches the active tab without touching selections', () {
+    test('selectCategory switches the active tab without touching selections',
+        () {
       final controller = AvatarCreatorController(categories: categories);
       controller.selectOption('body', 'body-2');
 
@@ -144,7 +156,9 @@ void main() {
       expect(controller.selectedOptionFor('body').id, 'body-2');
     });
 
-    test('layerAssetPaths excludes the background category and resolves the shape+color combination', () {
+    test(
+        'layerAssetPaths excludes the background category and resolves the shape+color combination',
+        () {
       final controller = AvatarCreatorController(categories: categories);
       controller.selectColorOption('hair', 'purple');
 
@@ -155,12 +169,16 @@ void main() {
       // Estas categorías de prueba no fijan assetPackage (igual que una
       // categoría propia del canal): debe quedar null, no asumir
       // 'avatar_flutter'.
-      expect(controller.layerAssetPaths.map((layer) => layer.package), [null, null]);
+      expect(controller.layerAssetPaths.map((layer) => layer.package),
+          [null, null]);
     });
 
-    test('layerAssetPaths respeta el assetPackage de cada opción (null para el canal, un paquete para el catálogo oficial)', () {
+    test(
+        'layerAssetPaths respeta el assetPackage de cada opción (null para el canal, un paquete para el catálogo oficial)',
+        () {
       final mixedCategories = [
-        _layerCategory('body', ['body-1']), // sin assetPackage: como una categoría del canal
+        _layerCategory('body',
+            ['body-1']), // sin assetPackage: como una categoría del canal
         AvatarLayerCategory(
           id: 'official',
           label: 'official',
@@ -183,7 +201,9 @@ void main() {
       );
     });
 
-    test('resolveAssetPath returns null when the shape option is actually a pure color option', () {
+    test(
+        'resolveAssetPath returns null when the shape option is actually a pure color option',
+        () {
       // Regresión: la cuadrícula de "Color de fondo" reutiliza el mismo
       // AvatarOptionGrid que las categorías ilustradas, así que
       // AvatarCreatorScreen le pasa un resolveAssetPath incondicionalmente.
@@ -203,14 +223,18 @@ void main() {
         kind: AvatarCategoryKind.layer,
         options: const [
           AvatarOption.none(id: 'none', semanticLabel: 'Sin accesorios'),
-          AvatarOption.layer(id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
+          AvatarOption.layer(
+              id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
         ],
       );
 
-      expect(category.resolveAssetPath(category.optionById('none'), null), isNull);
+      expect(
+          category.resolveAssetPath(category.optionById('none'), null), isNull);
     });
 
-    test('a category whose default option is AvatarOption.none contributes no layer until a real style is chosen', () {
+    test(
+        'a category whose default option is AvatarOption.none contributes no layer until a real style is chosen',
+        () {
       final categoriesWithOptionalExtra = [
         ...categories,
         AvatarLayerCategory(
@@ -220,11 +244,13 @@ void main() {
           kind: AvatarCategoryKind.layer,
           options: const [
             AvatarOption.none(id: 'none', semanticLabel: 'Sin accesorios'),
-            AvatarOption.layer(id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
+            AvatarOption.layer(
+                id: 'style-1', assetPath: 'assets/avatar/extra/style-1.svg'),
           ],
         ),
       ];
-      final controller = AvatarCreatorController(categories: categoriesWithOptionalExtra);
+      final controller =
+          AvatarCreatorController(categories: categoriesWithOptionalExtra);
 
       expect(controller.selectedOptionFor('extra').id, 'none');
       expect(
@@ -240,7 +266,9 @@ void main() {
       );
     });
 
-    test('save() surfaces a StateError and records it when the preview is not mounted', () async {
+    test(
+        'save() surfaces a StateError and records it when the preview is not mounted',
+        () async {
       final controller = AvatarCreatorController(categories: categories);
 
       await expectLater(controller.save(), throwsA(isA<StateError>()));
