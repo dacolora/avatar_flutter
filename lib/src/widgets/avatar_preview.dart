@@ -82,20 +82,39 @@ class AvatarPreview extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: height,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        // El lavado pálido "fuera" del círculo: en vez de aplicar
-        // opacidad real (`backgroundColor.withOpacity(...)`, que dejaría
-        // ver — literalmente — lo que hay detrás), se mezcla el color de
-        // fondo con blanco en un 25%. El resultado se ve igual de "pálido"
-        // que la opacidad (matemáticamente es el mismo color, ya que este
-        // preview siempre estuvo sobre un fondo blanco), pero es un color
-        // sólido y opaco. Eso importa porque este preview vive en un
-        // `SliverPersistentHeader` fijo, con contenido scrolleable
-        // pasando por detrás: con opacidad real, ese contenido se vería
-        // "a través" del preview en vez de quedar tapado por él.
-        color: Color.lerp(Colors.white, backgroundColor, 0.25),
-        child: Center(
+      // El lavado pálido y el círculo son hermanos dentro del mismo
+      // `Stack`, no uno anidado dentro del otro: el lavado es lo único
+      // animado (su `color`, ver más abajo), mientras que el círculo se
+      // redimensiona siempre de forma instantánea junto con el rectángulo
+      // exterior, en el mismo frame — si el círculo colgara *dentro* del
+      // `AnimatedContainer` del lavado, cada scroll dispararía de nuevo su
+      // maquinaria de animación implícita (aunque el color no cambie),
+      // agregando trabajo innecesario justo en el subárbol que más le
+      // importa mantener sincronizado con el dedo del usuario, y en un
+      // dispositivo real ese trabajo de más puede costar el frame que hace
+      // que el círculo se vea "un paso atrás" del rectángulo mientras se
+      // encoge o expande.
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned.fill(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              // El lavado pálido "fuera" del círculo: en vez de aplicar
+              // opacidad real (`backgroundColor.withOpacity(...)`, que
+              // dejaría ver — literalmente — lo que hay detrás), se
+              // mezcla el color de fondo con blanco en un 25%. El
+              // resultado se ve igual de "pálido" que la opacidad
+              // (matemáticamente es el mismo color, ya que este preview
+              // siempre estuvo sobre un fondo blanco), pero es un color
+              // sólido y opaco. Eso importa porque este preview vive en
+              // un `SliverPersistentHeader` fijo, con contenido
+              // scrolleable pasando por detrás: con opacidad real, ese
+              // contenido se vería "a través" del preview en vez de
+              // quedar tapado por él.
+              color: Color.lerp(Colors.white, backgroundColor, 0.25),
+            ),
+          ),
           // `RepaintBoundary` aísla esta parte del árbol para que Flutter
           // pueda redibujarla de forma independiente del resto de la
           // pantalla — pero aquí cumple, además, un segundo propósito
@@ -111,7 +130,7 @@ class AvatarPreview extends StatelessWidget {
           // mantiene siempre montado (por ser `pinned: true`), da igual en
           // qué punto del scroll (ni siquiera qué tan encogido) esté el
           // preview al momento de guardar.
-          child: RepaintBoundary(
+          RepaintBoundary(
             key: controller.previewBoundaryKey,
             child: SizedBox(
               width: circleDiameter,
@@ -172,7 +191,7 @@ class AvatarPreview extends StatelessWidget {
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
