@@ -240,7 +240,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   double _expandedHeight = 249;
   double _collapsedHeight = 160;
   int _gridCrossAxisCount = 2;
-  int _maxGridOptions = 10;
+  int _maxGridOptions = 12;
   int _maxRowOptions = 6;
   final _titleController = TextEditingController(text: 'Crear avatar');
   final _saveButtonController = TextEditingController(text: 'Guardar');

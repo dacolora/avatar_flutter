@@ -75,10 +75,10 @@ void main() {
     ]);
   });
 
-  testWidgets('AvatarOptionGrid enforces the 11-item spec limit',
+  testWidgets('AvatarOptionGrid enforces the 12-item spec limit',
       (tester) async {
     final tooManyOptions = List.generate(
-      12,
+      13,
       (index) => AvatarOption.layer(
           id: 'body-$index', assetPath: 'assets/avatar/body/Property 1=1.svg'),
     );

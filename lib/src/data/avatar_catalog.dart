@@ -78,6 +78,7 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
       shapeSectionLabel: 'Forma del pelo',
       shapeSemanticPrefix: 'Forma de pelo',
       shapeCount: 11,
+      noneOptionSemanticLabel: 'Sin pelo',
       colorOptions: const [
         AvatarOption.color(
             id: '1', color: Color(0xFFFF7F41), semanticLabel: 'Naranja'),
@@ -160,6 +161,11 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
 /// plantilla con el marcador `{color}` — ver
 /// [AvatarLayerCategory.resolveAssetPath] y
 /// [AvatarLayerCategory.resolveThumbnailAssetPath].
+///
+/// Si se da [noneOptionSemanticLabel], se agrega al final una opción
+/// [AvatarOption.none] adicional (por ejemplo, "Sin pelo" en Cabello, para
+/// un usuario calvo) — sin `assetPath`, así que al elegirla esa categoría
+/// no aporta ninguna capa al preview.
 AvatarLayerCategory _coloredCategory({
   required String id,
   required String label,
@@ -169,6 +175,7 @@ AvatarLayerCategory _coloredCategory({
   required String shapeSemanticPrefix,
   required int shapeCount,
   required List<AvatarOption> colorOptions,
+  String? noneOptionSemanticLabel,
 }) {
   return AvatarLayerCategory(
     id: id,
@@ -187,6 +194,17 @@ AvatarLayerCategory _coloredCategory({
               'assets/avatar/ct_$id/ct_${id}_{color}_$shape.svg',
           assetPackage: 'avatar_flutter',
           semanticLabel: '$shapeSemanticPrefix $shape',
+        ),
+      if (noneOptionSemanticLabel != null)
+        AvatarOption.none(
+          id: 'none',
+          semanticLabel: noneOptionSemanticLabel,
+          // Todavía sin `thumbnailAssetPath`: diseño no ha entregado un
+          // SVG propio para este estado. Su miniatura, mientras tanto,
+          // usa el ícono neutro por defecto de AvatarSelectableThumbnail.
+          // En cuanto exista `assets/avatar/$id/none.svg`, alcanza con
+          // agregar aquí `thumbnailAssetPath: 'assets/avatar/$id/none.svg',
+          // assetPackage: 'avatar_flutter'`.
         ),
     ],
   );

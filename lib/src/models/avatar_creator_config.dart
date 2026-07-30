@@ -36,7 +36,7 @@ class AvatarCreatorConfig {
     this.previewExpandedHeight = 249,
     this.previewCollapsedHeight = 160,
     this.gridCrossAxisCount = 2,
-    this.maxGridOptions = 11,
+    this.maxGridOptions = 12,
     this.maxRowOptions = 6,
     this.onView,
     this.onSave,
@@ -141,17 +141,17 @@ class AvatarCreatorConfig {
   final double previewCollapsedHeight;
 
   /// Número de columnas de la cuadrícula de opciones ilustradas
-  /// ([AvatarOptionGrid]) — 3 por defecto, el valor que pidió el equipo de
+  /// ([AvatarOptionGrid]) — 2 por defecto, el valor que pidió el equipo de
   /// diseño de Bancolombia. El canal puede darle otro valor si su catálogo
   /// tiene opciones que se ven mejor con más o menos columnas (por ejemplo,
   /// miniaturas más simples suelen verse bien con 4 o 5 columnas).
   final int gridCrossAxisCount;
 
   /// Máximo de opciones que admite la cuadrícula de una categoría
-  /// ([AvatarOptionGrid]) — 11 por defecto (el máximo real que usa el
-  /// catálogo oficial: las 11 formas de Cabello). Solo debería subirse más
-  /// si el canal agrega una categoría propia (ver [categories]) que de
-  /// verdad necesita todavía más opciones.
+  /// ([AvatarOptionGrid]) — 12 por defecto (el máximo real que usa el
+  /// catálogo oficial: las 11 formas de Cabello más su opción "Sin pelo").
+  /// Solo debería subirse más si el canal agrega una categoría propia (ver
+  /// [categories]) que de verdad necesita todavía más opciones.
   final int maxGridOptions;
 
   /// Máximo de opciones que admite la fila de color de una categoría

@@ -17,7 +17,7 @@ import 'avatar_selectable_thumbnail.dart';
 /// opciones son `category.options` (la cuadrícula normal) o
 /// `category.colorOptions` en algún otro contexto.
 ///
-/// Admite como máximo 11 opciones y se muestra en 2 columnas por defecto —
+/// Admite como máximo 12 opciones y se muestra en 2 columnas por defecto —
 /// ambos valores son los por defecto de [maxOptions] y [crossAxisCount], y
 /// el canal puede cambiarlos (ver [AvatarCreatorConfig.maxGridOptions] y
 /// [AvatarCreatorConfig.gridCrossAxisCount]).
@@ -28,7 +28,7 @@ class AvatarOptionGrid extends StatelessWidget {
     required this.onSelected,
     this.resolveThumbnailAssetPath,
     this.crossAxisCount = 2,
-    this.maxOptions = 11,
+    this.maxOptions = 12,
     super.key,
   }) : assert(
           options.length <= maxOptions,
@@ -67,7 +67,7 @@ class AvatarOptionGrid extends StatelessWidget {
   final int crossAxisCount;
 
   /// Máximo de opciones admitidas. Ver
-  /// [AvatarCreatorConfig.maxGridOptions] — 11 por defecto.
+  /// [AvatarCreatorConfig.maxGridOptions] — 12 por defecto.
   final int maxOptions;
 
   @override

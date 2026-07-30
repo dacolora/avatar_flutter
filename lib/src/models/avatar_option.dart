@@ -83,17 +83,24 @@ class AvatarOption extends Equatable {
         assetPackage = null;
 
   /// Crea una opción que representa "ninguna" — por ejemplo, "Sin
-  /// accesorios" en la categoría Accesorios. Al seleccionarla, esa categoría
-  /// no aporta ninguna capa al preview (ver
-  /// [AvatarCreatorController.layerAssetPaths]) y su miniatura muestra un
-  /// ícono neutro en vez de una ilustración o un color (ver
-  /// [AvatarSelectableThumbnail]).
+  /// accesorios" en Accesorios o "Sin pelo" en Cabello (para un usuario
+  /// calvo). Al seleccionarla, esa categoría no aporta ninguna capa al
+  /// preview (ver [AvatarCreatorController.layerAssetPaths]) —
+  /// [assetPath] se deja siempre en `null`, así que nunca hay nada que
+  /// dibujar en el círculo del avatar, sin importar [thumbnailAssetPath].
+  ///
+  /// Por defecto, su miniatura en la cuadrícula/fila muestra un ícono
+  /// neutro (ver [AvatarSelectableThumbnail]). Si el equipo de diseño
+  /// entrega una ilustración propia para este estado (por ejemplo, un
+  /// ícono de "sin accesorios" o una cabeza calva) en vez del ícono
+  /// genérico, pásala en [thumbnailAssetPath] — sigue sin afectar el
+  /// preview, solo cambia qué se dibuja en la miniatura seleccionable.
   const AvatarOption.none({
     required this.id,
+    this.thumbnailAssetPath,
+    this.assetPackage,
     this.semanticLabel,
   })  : assetPath = null,
-        thumbnailAssetPath = null,
-        assetPackage = null,
         color = null;
 
   /// Identificador único de esta opción **dentro de su categoría** (por

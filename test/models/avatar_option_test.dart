@@ -32,4 +32,19 @@ void main() {
 
     expect(a, b);
   });
+
+  test(
+      'AvatarOption.none con thumbnailAssetPath sigue sin assetPath (no aporta capa al preview)',
+      () {
+    const option = AvatarOption.none(
+      id: 'none',
+      semanticLabel: 'Sin pelo',
+      thumbnailAssetPath: 'assets/avatar/hair/none.svg',
+      assetPackage: 'avatar_flutter',
+    );
+
+    expect(option.isNone, isTrue);
+    expect(option.assetPath, isNull);
+    expect(option.thumbnailAssetPath, 'assets/avatar/hair/none.svg');
+  });
 }

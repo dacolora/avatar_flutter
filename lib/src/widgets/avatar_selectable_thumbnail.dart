@@ -90,12 +90,26 @@ class AvatarSelectableThumbnail extends StatelessWidget {
         child: option.color != null
             ? ColoredBox(color: option.color!)
             : option.isNone
-                ? const ColoredBox(
-                    color: Color(0xFFF2F2F3),
-                    child: Center(
-                      child:
-                          Icon(Icons.block_outlined, color: Color(0xFF8A8A8E)),
-                    ),
+                ? ColoredBox(
+                    color: const Color(0xFFF2F2F3),
+                    // Si la opción "ninguna" trae su propia ilustración
+                    // (ver [AvatarOption.none]), se dibuja esa en vez del
+                    // ícono genérico — sigue sin aportar ninguna capa al
+                    // preview, [option.isNone] solo cambia qué se ve en
+                    // esta miniatura.
+                    child: option.thumbnailAssetPath == null
+                        ? const Center(
+                            child: Icon(Icons.block_outlined,
+                                color: Color(0xFF8A8A8E)),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: SvgPicture.asset(
+                              option.thumbnailAssetPath!,
+                              package: option.assetPackage,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                   )
                 : ColoredBox(
                     color: const Color(0xFFF2F2F3),

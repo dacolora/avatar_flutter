@@ -293,7 +293,7 @@ necesita algo distinto tiene el control real, no solo la ilusión de tenerlo.
 | `title` / `backButtonLabel` / `saveButtonText` | textos oficiales en español | Los textos visibles del header/footer |
 | `previewExpandedHeight` / `previewCollapsedHeight` | `249` / `160` | Los altos del preview al abrir y tras hacer scroll del todo |
 | `gridCrossAxisCount` | `2` | Columnas de la cuadrícula de opciones ilustradas |
-| `maxGridOptions` | `10` | Máximo de opciones en una cuadrícula |
+| `maxGridOptions` | `12` | Máximo de opciones en una cuadrícula |
 | `maxRowOptions` | `6` | Máximo de opciones en una fila de color |
 | `onView` / `onSave` / `onSaveSuccess` / `onSaveError` / `onCancel` | sin efecto | Los puntos de extensión para analítica/persistencia (ver tabla de responsabilidades) |
 
