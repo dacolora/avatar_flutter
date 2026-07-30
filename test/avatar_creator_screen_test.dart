@@ -125,6 +125,21 @@ void main() {
   });
 
   testWidgets(
+      'Accesorios abre con "Sin accesorios" preseleccionado y sin lanzar excepción',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: AvatarCreatorScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Accesorios'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.bySemanticsLabel('Sin accesorios'), findsOneWidget);
+  });
+
+  testWidgets(
       'Vestuario abre con su fila de color (es layerWithColor, no una cuadrícula simple)',
       (tester) async {
     await tester.pumpWidget(

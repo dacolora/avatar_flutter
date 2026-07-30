@@ -3,20 +3,27 @@ import 'package:flutter/material.dart';
 import '../models/avatar_layer_category.dart';
 import '../models/avatar_option.dart';
 
+/// Ícono compartido de "ninguna opción" (círculo con una línea diagonal),
+/// usado como miniatura tanto de "Sin pelo" (Cabello) como de "Sin
+/// accesorios" (Accesorios) — un solo archivo para las dos categorías, no
+/// uno por categoría.
+const String _noneThumbnailAssetPath = 'assets/avatar/none.svg';
+
 /// Catálogo por defecto del widget: define **qué** categorías existen, en
 /// **qué orden**, y **qué opciones** tiene cada una.
 ///
 /// Esta función es, junto con [AvatarCreatorConfig], la otra mitad de la
 /// frontera librería/canal: aquí es donde vive el contenido que el equipo de
 /// diseño de Bancolombia definió como "el" catálogo oficial (Vestuario,
-/// Cabello, Rostro y Color de fondo). El canal normalmente **no** llama a
-/// esta función directamente ni la sobreescribe: [AvatarCreatorScreen] la usa
-/// automáticamente cuando el canal no provee [AvatarCreatorConfig.categories].
+/// Cabello, Rostro, Accesorios y Color de fondo). El canal normalmente
+/// **no** llama a esta función directamente ni la sobreescribe:
+/// [AvatarCreatorScreen] la usa automáticamente cuando el canal no provee
+/// [AvatarCreatorConfig.categories].
 ///
 /// El **orden** de la lista que devuelve importa por dos motivos a la vez:
 /// es el orden de los tabs de navegación que ve el usuario, y es también el
 /// orden de apilado (z-index) en el preview — cada capa se dibuja encima de
-/// la anterior, de más al fondo (Vestuario) a más al frente (Rostro). La
+/// la anterior, de más al fondo (Vestuario) a más al frente (Accesorios). La
 /// categoría de fondo ("background") no cuenta para el apilado: no es una
 /// capa SVG, es el color detrás de todas ellas (ver
 /// [AvatarLayerCategory.isBackground]).
@@ -116,6 +123,34 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
             id: '5', color: Color(0xFFCCA07C), semanticLabel: 'Tono de piel 5'),
       ],
     ),
+    // A diferencia de las categorías de arriba, esta es `kind: layer` (una
+    // sola cuadrícula, sin fila de color): a diferencia de Vestuario,
+    // Cabello y Rostro, un accesorio es opcional por naturaleza, así que
+    // "Sin accesorios" va primero en `options` — eso lo deja preseleccionado
+    // por defecto en un avatar nuevo (ver
+    // [AvatarCreatorController._defaultSelection], que siempre usa
+    // `options.first`).
+    AvatarLayerCategory(
+      id: 'extra',
+      label: 'Accesorios',
+      icon: Icons.auto_awesome_outlined,
+      kind: AvatarCategoryKind.layer,
+      options: const [
+        AvatarOption.none(
+          id: 'none',
+          semanticLabel: 'Sin accesorios',
+          thumbnailAssetPath: _noneThumbnailAssetPath,
+          assetPackage: 'avatar_flutter',
+        ),
+        AvatarOption.layer(
+          id: '1',
+          assetPath: 'assets/avatar/extra/extra_1.svg',
+          thumbnailAssetPath: 'assets/avatar/ct_extra/ct_extra_1.svg',
+          assetPackage: 'avatar_flutter',
+          semanticLabel: 'Accesorio 1',
+        ),
+      ],
+    ),
     // A diferencia de las categorías de arriba, esta se construye
     // directamente con el constructor normal de [AvatarLayerCategory] (no
     // con un helper), porque sus opciones no son ilustraciones sino colores
@@ -199,12 +234,8 @@ AvatarLayerCategory _coloredCategory({
         AvatarOption.none(
           id: 'none',
           semanticLabel: noneOptionSemanticLabel,
-          // Todavía sin `thumbnailAssetPath`: diseño no ha entregado un
-          // SVG propio para este estado. Su miniatura, mientras tanto,
-          // usa el ícono neutro por defecto de AvatarSelectableThumbnail.
-          // En cuanto exista `assets/avatar/$id/none.svg`, alcanza con
-          // agregar aquí `thumbnailAssetPath: 'assets/avatar/$id/none.svg',
-          // assetPackage: 'avatar_flutter'`.
+          thumbnailAssetPath: _noneThumbnailAssetPath,
+          assetPackage: 'avatar_flutter',
         ),
     ],
   );

@@ -28,3 +28,6 @@ flutter:
     - assets/avatar/ct_hair/
     - assets/avatar/body/
     - assets/avatar/ct_body/
+    - assets/avatar/extra/
+    - assets/avatar/ct_extra/
+    - assets/avatar/none.svg
