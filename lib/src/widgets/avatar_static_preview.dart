@@ -76,27 +76,32 @@ class AvatarStaticPreview extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          CircleAvatar(radius: size / 2, backgroundColor: backgroundColor),
-          SizedBox(
-            width: size,
-            height: size,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                for (final layer in layers)
-                  SvgPicture.asset(
-                    layer.path,
-                    package: layer.package,
-                    fit: BoxFit.contain,
-                  ),
-              ],
+      // `ClipOval` recorta las capas al círculo del avatar: sin esto, una
+      // capa cuyo dibujo llegue hasta las esquinas de su lienzo cuadrado
+      // (por ejemplo, los hombros de Vestuario) sobresaldría visualmente
+      // del círculo en vez de quedar contenida en él.
+      child: ClipOval(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            CircleAvatar(radius: size / 2, backgroundColor: backgroundColor),
+            SizedBox(
+              width: size,
+              height: size,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  for (final layer in layers)
+                    SvgPicture.asset(
+                      layer.path,
+                      package: layer.package,
+                      fit: BoxFit.contain,
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

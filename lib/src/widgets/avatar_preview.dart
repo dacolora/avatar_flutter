@@ -116,58 +116,59 @@ class AvatarPreview extends StatelessWidget {
             child: SizedBox(
               width: circleDiameter,
               height: circleDiameter,
-              // `Stack` dibuja a todos sus hijos unos encima de otros, en
-              // el mismo espacio. `clipBehavior: Clip.none` deja que una
-              // capa más ancha que el círculo (por ejemplo, un accesorio
-              // grande) pueda sobresalir un poco de él en pantalla en vez
-              // de recortarse en seco — tal como lo muestra la
-              // especificación de diseño. Eso no afecta lo que se guarda:
-              // `toImage()` solo captura el tamaño de este `SizedBox` (ver
-              // comentario de arriba).
-              child: Stack(
-                alignment: Alignment.center,
-                clipBehavior: Clip.none,
-                children: [
-                  // El círculo de fondo, con el color sólido elegido por
-                  // el usuario — el equivalente visual a un `CircleAvatar`
-                  // sin imagen, solo con color.
-                  CircleAvatar(
-                    radius: circleDiameter / 2,
-                    backgroundColor: backgroundColor,
-                  ),
-                  // Las capas ilustradas seleccionadas, encima del
-                  // círculo, en el orden dado por
-                  // `controller.layerAssetPaths` (que a su vez respeta el
-                  // orden del catálogo — ver [AvatarLayerCategory] y
-                  // [AvatarCreatorController.layerAssetPaths]).
-                  SizedBox(
-                    width: circleDiameter,
-                    height: circleDiameter,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        for (final layer in controller.layerAssetPaths)
-                          SvgPicture.asset(
-                            layer.path,
-                            // `package` le dice a `flutter_svg` en qué
-                            // paquete buscar el asset — necesario porque
-                            // los assets declarados en el `pubspec.yaml`
-                            // de un paquete no son automáticamente
-                            // visibles para la app anfitriona salvo que se
-                            // indique explícitamente de qué paquete
-                            // vienen. Viene de
-                            // `AvatarOption.assetPackage`: `'avatar_flutter'`
-                            // para las categorías del catálogo oficial,
-                            // `null` para una categoría que el propio
-                            // canal haya agregado (su SVG vive en el
-                            // bundle de su propia app).
-                            package: layer.package,
-                            fit: BoxFit.contain,
-                          ),
-                      ],
+              // `ClipOval` recorta todo lo que se dibuje dentro de este
+              // `SizedBox` al círculo del avatar: sin esto, una capa cuyo
+              // dibujo llegue hasta las esquinas de su lienzo cuadrado
+              // (por ejemplo, los hombros de Vestuario) sobresaldría
+              // visualmente del círculo en vez de quedar contenida en él.
+              // Como envuelve al mismo `SizedBox` que captura `toImage()`
+              // (ver comentario de arriba), lo guardado queda recortado
+              // igual que lo que se ve en pantalla.
+              child: ClipOval(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // El círculo de fondo, con el color sólido elegido por
+                    // el usuario — el equivalente visual a un `CircleAvatar`
+                    // sin imagen, solo con color.
+                    CircleAvatar(
+                      radius: circleDiameter / 2,
+                      backgroundColor: backgroundColor,
                     ),
-                  ),
-                ],
+                    // Las capas ilustradas seleccionadas, encima del
+                    // círculo, en el orden dado por
+                    // `controller.layerAssetPaths` (que a su vez respeta el
+                    // orden del catálogo — ver [AvatarLayerCategory] y
+                    // [AvatarCreatorController.layerAssetPaths]).
+                    SizedBox(
+                      width: circleDiameter,
+                      height: circleDiameter,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          for (final layer in controller.layerAssetPaths)
+                            SvgPicture.asset(
+                              layer.path,
+                              // `package` le dice a `flutter_svg` en qué
+                              // paquete buscar el asset — necesario porque
+                              // los assets declarados en el `pubspec.yaml`
+                              // de un paquete no son automáticamente
+                              // visibles para la app anfitriona salvo que se
+                              // indique explícitamente de qué paquete
+                              // vienen. Viene de
+                              // `AvatarOption.assetPackage`: `'avatar_flutter'`
+                              // para las categorías del catálogo oficial,
+                              // `null` para una categoría que el propio
+                              // canal haya agregado (su SVG vive en el
+                              // bundle de su propia app).
+                              package: layer.package,
+                              fit: BoxFit.contain,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
