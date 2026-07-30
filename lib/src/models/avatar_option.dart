@@ -24,25 +24,14 @@ import 'package:flutter/widgets.dart';
 ///
 /// ### ¿Por qué dos constructores en lugar de dos clases?
 /// Ambos tipos de opción necesitan convivir en la misma lista
-/// (`List<AvatarOption>`, ver [AvatarLayerCategory.options]) y ser dibujados
+/// (`List<AvatarOption>` y ser dibujados
 /// por el mismo widget ([AvatarSelectableThumbnail]). En Dart existen dos
 /// formas típicas de modelar "dos variantes de una misma cosa": crear una
 /// clase abstracta con dos subclases, o usar **constructores con nombre**
 /// (`ClaseX.nombreA(...)`, `ClaseX.nombreB(...)`) que construyen la *misma*
 /// clase pero llenan campos distintos. Aquí se eligió la segunda opción
-/// porque es más simple: no hace falta un `switch` sobre el tipo de objeto
-/// (`is AvatarOptionLayer`), solo revisar si [assetPath] o [color] es
-/// distinto de `null`.
+/// porque es más simple.
 ///
-/// Cada constructor deja en `null` los campos que no le corresponden (por
-/// ejemplo, [AvatarOption.layer] fija `color = null`). La garantía que usa
-/// el resto del código es que **nunca hay más de uno** de los dos
-/// (`assetPath`/`color`) distinto de `null` a la vez — pero sí puede haber
-/// **ninguno** de los dos, en el caso de [AvatarOption.none] (ver [isNone]).
-/// Por eso, antes de leer `option.assetPath!` (con `!`, el operador "confío
-/// en que no es null" de Dart) el resto del código siempre revisa primero
-/// `option.color != null` y, si corresponde, `option.isNone`, para decidir
-/// qué rama pintar (ver [AvatarSelectableThumbnail]).
 ///
 /// ### ¿Por qué extiende [Equatable]?
 /// En Dart, por defecto, `==` compara **identidad** (¿son literalmente el
@@ -83,24 +72,17 @@ class AvatarOption extends Equatable {
         assetPackage = null;
 
   /// Crea una opción que representa "ninguna" — por ejemplo, "Sin
-  /// accesorios" en Accesorios o "Sin pelo" en Cabello (para un usuario
-  /// calvo). Al seleccionarla, esa categoría no aporta ninguna capa al
-  /// preview (ver [AvatarCreatorController.layerAssetPaths]) —
-  /// [assetPath] se deja siempre en `null`, así que nunca hay nada que
-  /// dibujar en el círculo del avatar, sin importar [thumbnailAssetPath].
-  ///
-  /// Por defecto, su miniatura en la cuadrícula/fila muestra un ícono
-  /// neutro (ver [AvatarSelectableThumbnail]). Si el equipo de diseño
-  /// entrega una ilustración propia para este estado (por ejemplo, un
-  /// ícono de "sin accesorios" o una cabeza calva) en vez del ícono
-  /// genérico, pásala en [thumbnailAssetPath] — sigue sin afectar el
-  /// preview, solo cambia qué se dibuja en la miniatura seleccionable.
+  /// accesorios" en la categoría Accesorios. Al seleccionarla, esa categoría
+  /// no aporta ninguna capa al preview (ver
+  /// [AvatarCreatorController.layerAssetPaths]) y su miniatura muestra un
+  /// ícono neutro en vez de una ilustración o un color (ver
+  /// [AvatarSelectableThumbnail]).
   const AvatarOption.none({
     required this.id,
-    this.thumbnailAssetPath,
-    this.assetPackage,
     this.semanticLabel,
   })  : assetPath = null,
+        thumbnailAssetPath = null,
+        assetPackage = null,
         color = null;
 
   /// Identificador único de esta opción **dentro de su categoría** (por
