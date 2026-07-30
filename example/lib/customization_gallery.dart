@@ -173,7 +173,6 @@ AvatarCreatorConfig _editExistingConfig() {
       'hair_color': '4',
       'face': '3',
       'face_color': '2',
-      'extra': '2',
       'background': 'blue',
     }),
   );
