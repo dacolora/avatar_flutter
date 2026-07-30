@@ -43,6 +43,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// memoria como aquí, se subiría a un servidor o se guardaría en disco).
   ImageProvider? _avatarImageProvider;
 
+  /// La selección guardada la última vez (ver [_loadSavedSelection]),
+  /// cargada en [initState]. A diferencia de [_avatarImageProvider] —que
+  /// solo vive en memoria y por lo tanto se pierde en cada hot restart—
+  /// esta selección viene de `SharedPreferences`, así que sigue disponible
+  /// después de un hot restart (o de reabrir la app). Se dibuja con
+  /// [AvatarStaticPreview] en vez de esperar a tener de nuevo los bytes del
+  /// PNG, que nunca se persisten en este ejemplo.
+  Map<String, String>? _savedSelection;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedSelection().then((selection) {
+      if (mounted && selection.isNotEmpty) {
+        setState(() => _savedSelection = selection);
+      }
+    });
+  }
+
   /// Llave bajo la que se guarda la selección del avatar en
   /// `SharedPreferences`. `SharedPreferences` solo almacena tipos simples
   /// (`String`, `int`, `bool`, `double`, `List<String>`), no mapas, así que
@@ -103,7 +122,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // para subirlos a un servidor); result.imageProvider es la versión ya
     // lista para mostrarse en un widget de imagen.
     if (result is AvatarCreatorResult) {
-      if (mounted) setState(() => _avatarImageProvider = result.imageProvider);
+      if (mounted) {
+        setState(() {
+          _avatarImageProvider = result.imageProvider;
+          _savedSelection = result.selection;
+        });
+      }
       await _saveSelection(result.selection);
     }
   }
@@ -167,17 +191,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           button: true,
           child: GestureDetector(
             onTap: _openEditImageSheet,
-            child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 56,
-                  backgroundImage: _avatarImageProvider,
-                  child: _avatarImageProvider == null
-                      ? const Icon(Icons.person, size: 48)
-                      : null,
-                ),
-              ],
-            ),
+            // Tres estados posibles: (1) ya se guardó un avatar en esta
+            // misma sesión -> se dibuja de inmediato con la imagen ya
+            // generada (`_avatarImageProvider`, sin esperar nada). (2) no
+            // hay imagen en memoria pero sí una selección persistida de
+            // una sesión anterior -> se recompone con
+            // `AvatarStaticPreview`, que no necesita los bytes del PNG,
+            // solo el mismo `Map<String, String>` guardado. (3) ninguna de
+            // las dos -> ícono de placeholder.
+            child: _avatarImageProvider != null
+                ? CircleAvatar(
+                    radius: 56, backgroundImage: _avatarImageProvider)
+                : _savedSelection != null
+                    ? AvatarStaticPreview(
+                        selection: _savedSelection!, size: 112)
+                    : const CircleAvatar(
+                        radius: 56, child: Icon(Icons.person, size: 48)),
           ),
         ),
       ),
