@@ -71,6 +71,10 @@ class AvatarPreview extends StatelessWidget {
     final height =
         lerpDouble(collapsedHeight, expandedHeight, clampedExpansion);
     final circleDiameter = height * _circleToHeightRatio;
+    // Tamaño fijo al que se construye el círculo internamente, sin
+    // importar cuánto se haya scrolleado — ver el comentario junto a
+    // `FittedBox` más abajo sobre por qué importa que sea constante.
+    final maxCircleDiameter = expandedHeight * _circleToHeightRatio;
 
     // El alto y el diámetro del círculo se fijan directamente a partir de
     // `expansion` (sin `AnimatedContainer`/`AnimatedSize`): como
@@ -135,58 +139,85 @@ class AvatarPreview extends StatelessWidget {
             child: SizedBox(
               width: circleDiameter,
               height: circleDiameter,
-              // `ClipOval` recorta todo lo que se dibuje dentro de este
-              // `SizedBox` al círculo del avatar: sin esto, una capa cuyo
-              // dibujo llegue hasta las esquinas de su lienzo cuadrado
-              // (por ejemplo, los hombros de Vestuario) sobresaldría
-              // visualmente del círculo en vez de quedar contenida en él.
-              // Como envuelve al mismo `SizedBox` que captura `toImage()`
-              // (ver comentario de arriba), lo guardado queda recortado
-              // igual que lo que se ve en pantalla.
-              child: ClipOval(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // El círculo de fondo, con el color sólido elegido por
-                    // el usuario — el equivalente visual a un `CircleAvatar`
-                    // sin imagen, solo con color.
-                    CircleAvatar(
-                      radius: circleDiameter / 2,
-                      backgroundColor: backgroundColor,
+              // `FittedBox` es la pieza que evita el "el círculo queda
+              // atrás" durante el scroll: el círculo (`ClipOval` + `Stack`
+              // + los SVG) se construye siempre al mismo tamaño fijo
+              // (`maxCircleDiameter`, el diámetro totalmente expandido) y
+              // acá simplemente se escala en el pintado para caber en
+              // `circleDiameter`, el tamaño real de este frame. Antes ese
+              // subárbol se reconstruía con un `circleDiameter` distinto
+              // en cada frame de scroll: el `ClipOval` tenía que recalcular
+              // su recorte y cada `SvgPicture` su transform de
+              // `BoxFit.contain` con esas nuevas medidas exactas, y en un
+              // dispositivo real ese recálculo por frame podía quedarse un
+              // paso atrás del tamaño ya nuevo del `SizedBox` de afuera —
+              // exactamente el "el vestuario se ve enorme, fuera del
+              // círculo, mientras se hace scroll" que se veía en pantalla.
+              // Con `FittedBox`, el contenido interno nunca cambia de
+              // tamaño (nada que recalcular ni recortar de nuevo), así que
+              // no hay ningún cálculo que se pueda quedar atrás: lo único
+              // que varía cada frame es una escala de pintado, aplicada en
+              // el mismo frame que el tamaño de afuera.
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: SizedBox(
+                  width: maxCircleDiameter,
+                  height: maxCircleDiameter,
+                  // `ClipOval` recorta todo lo que se dibuje dentro de
+                  // este `SizedBox` al círculo del avatar: sin esto, una
+                  // capa cuyo dibujo llegue hasta las esquinas de su
+                  // lienzo cuadrado (por ejemplo, los hombros de
+                  // Vestuario) sobresaldría visualmente del círculo en
+                  // vez de quedar contenida en él.
+                  child: ClipOval(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // El círculo de fondo, con el color sólido
+                        // elegido por el usuario — el equivalente visual
+                        // a un `CircleAvatar` sin imagen, solo con color.
+                        CircleAvatar(
+                          radius: maxCircleDiameter / 2,
+                          backgroundColor: backgroundColor,
+                        ),
+                        // Las capas ilustradas seleccionadas, encima del
+                        // círculo, en el orden dado por
+                        // `controller.layerAssetPaths` (que a su vez
+                        // respeta el orden del catálogo — ver
+                        // [AvatarLayerCategory] y
+                        // [AvatarCreatorController.layerAssetPaths]).
+                        SizedBox(
+                          width: maxCircleDiameter,
+                          height: maxCircleDiameter,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              for (final layer in controller.layerAssetPaths)
+                                SvgPicture.asset(
+                                  layer.path,
+                                  // `package` le dice a `flutter_svg` en
+                                  // qué paquete buscar el asset —
+                                  // necesario porque los assets
+                                  // declarados en el `pubspec.yaml` de un
+                                  // paquete no son automáticamente
+                                  // visibles para la app anfitriona salvo
+                                  // que se indique explícitamente de qué
+                                  // paquete vienen. Viene de
+                                  // `AvatarOption.assetPackage`:
+                                  // `'avatar_flutter'` para las
+                                  // categorías del catálogo oficial,
+                                  // `null` para una categoría que el
+                                  // propio canal haya agregado (su SVG
+                                  // vive en el bundle de su propia app).
+                                  package: layer.package,
+                                  fit: BoxFit.contain,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    // Las capas ilustradas seleccionadas, encima del
-                    // círculo, en el orden dado por
-                    // `controller.layerAssetPaths` (que a su vez respeta el
-                    // orden del catálogo — ver [AvatarLayerCategory] y
-                    // [AvatarCreatorController.layerAssetPaths]).
-                    SizedBox(
-                      width: circleDiameter,
-                      height: circleDiameter,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          for (final layer in controller.layerAssetPaths)
-                            SvgPicture.asset(
-                              layer.path,
-                              // `package` le dice a `flutter_svg` en qué
-                              // paquete buscar el asset — necesario porque
-                              // los assets declarados en el `pubspec.yaml`
-                              // de un paquete no son automáticamente
-                              // visibles para la app anfitriona salvo que se
-                              // indique explícitamente de qué paquete
-                              // vienen. Viene de
-                              // `AvatarOption.assetPackage`: `'avatar_flutter'`
-                              // para las categorías del catálogo oficial,
-                              // `null` para una categoría que el propio
-                              // canal haya agregado (su SVG vive en el
-                              // bundle de su propia app).
-                              package: layer.package,
-                              fit: BoxFit.contain,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
