@@ -55,28 +55,27 @@ const String _noneThumbnailAssetPath = 'assets/avatar/none.svg';
 List<AvatarLayerCategory> defaultAvatarCatalog() {
   return [
     _coloredCategory(
-      id: 'body',
-      label: 'Vestuario',
-      icon: Icons.checkroom_outlined,
-      colorSectionLabel: 'Color de vestuario',
-      shapeSectionLabel: 'Estilo de vestuario',
-      shapeSemanticPrefix: 'Vestuario',
-      shapeCount: 8,
+      id: 'face',
+      label: 'Rostro',
+      icon: Icons.face_outlined,
+      colorSectionLabel: 'Tono de piel',
+      shapeSectionLabel: 'Expresión',
+      shapeSemanticPrefix: 'Expresión',
+      shapeCount: 6,
       colorOptions: const [
         AvatarOption.color(
-            id: '1', color: Color(0xFFFDDA24), semanticLabel: 'Amarillo'),
+            id: '1', color: Color(0xFFE4AC7B), semanticLabel: 'Tono de piel 1'),
         AvatarOption.color(
-            id: '2', color: Color(0xFFF5B6CD), semanticLabel: 'Rosado'),
+            id: '2', color: Color(0xFFF3D8C1), semanticLabel: 'Tono de piel 2'),
         AvatarOption.color(
-            id: '3', color: Color(0xFFFF7F41), semanticLabel: 'Naranja'),
+            id: '3', color: Color(0xFFFFE5D1), semanticLabel: 'Tono de piel 3'),
         AvatarOption.color(
-            id: '4', color: Color(0xFF59CBE8), semanticLabel: 'Celeste'),
+            id: '4', color: Color(0xFF8C4D18), semanticLabel: 'Tono de piel 4'),
         AvatarOption.color(
-            id: '5', color: Color(0xFF9063CD), semanticLabel: 'Morado'),
-        AvatarOption.color(
-            id: '6', color: Color(0xFF00C389), semanticLabel: 'Verde'),
+            id: '5', color: Color(0xFFCCA07C), semanticLabel: 'Tono de piel 5'),
       ],
     ),
+
     _coloredCategory(
       id: 'hair',
       label: 'Cabello',
@@ -102,27 +101,31 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
             id: '5', color: Color(0xFFB3B5B8), semanticLabel: 'Gris'),
       ],
     ),
+
     _coloredCategory(
-      id: 'face',
-      label: 'Rostro',
-      icon: Icons.face_outlined,
-      colorSectionLabel: 'Tono de piel',
-      shapeSectionLabel: 'Expresión',
-      shapeSemanticPrefix: 'Expresión',
-      shapeCount: 6,
+      id: 'body',
+      label: 'Vestuario',
+      icon: Icons.checkroom_outlined,
+      colorSectionLabel: 'Color de vestuario',
+      shapeSectionLabel: 'Estilo de vestuario',
+      shapeSemanticPrefix: 'Vestuario',
+      shapeCount: 8,
       colorOptions: const [
         AvatarOption.color(
-            id: '1', color: Color(0xFFE4AC7B), semanticLabel: 'Tono de piel 1'),
+            id: '1', color: Color(0xFFFDDA24), semanticLabel: 'Amarillo'),
         AvatarOption.color(
-            id: '2', color: Color(0xFFF3D8C1), semanticLabel: 'Tono de piel 2'),
+            id: '2', color: Color(0xFFF5B6CD), semanticLabel: 'Rosado'),
         AvatarOption.color(
-            id: '3', color: Color(0xFFFFE5D1), semanticLabel: 'Tono de piel 3'),
+            id: '3', color: Color(0xFFFF7F41), semanticLabel: 'Naranja'),
         AvatarOption.color(
-            id: '4', color: Color(0xFF8C4D18), semanticLabel: 'Tono de piel 4'),
+            id: '4', color: Color(0xFF59CBE8), semanticLabel: 'Celeste'),
         AvatarOption.color(
-            id: '5', color: Color(0xFFCCA07C), semanticLabel: 'Tono de piel 5'),
+            id: '5', color: Color(0xFF9063CD), semanticLabel: 'Morado'),
+        AvatarOption.color(
+            id: '6', color: Color(0xFF00C389), semanticLabel: 'Verde'),
       ],
     ),
+
     // A diferencia de las categorías de arriba, esta es `kind: layer` (una
     // sola cuadrícula, sin fila de color): a diferencia de Vestuario,
     // Cabello y Rostro, un accesorio es opcional por naturaleza, así que
