@@ -5,19 +5,36 @@ import 'avatar_option.dart';
 /// Determina cómo se renderiza y se selecciona una categoría de
 /// personalización.
 ///
+/// Un `enum` en Dart es simplemente una lista cerrada de valores posibles.
+/// Se usa en vez de, por ejemplo, un `bool`, para que el código sea
+/// auto-descriptivo (`category.kind == AvatarCategoryKind.layer` se entiende
+/// sin adivinar qué significa un `true`/`false`) y para que el compilador
+/// avise en cada `switch` si en el futuro se agrega un tercer valor.
 enum AvatarCategoryKind {
-  /// La categoría se presenta con una única cuadrícula . Sirve tanto
-  /// para categorías de capas de accesorios, como para una categoría de colores
+  /// La categoría se presenta con una única cuadrícula ([AvatarOptionGrid],
+  /// máximo [AvatarCreatorConfig.maxGridOptions] opciones). Sirve tanto
+  /// para categorías de capas ilustradas como para una categoría de colores
   /// sólidos sin selector de forma — hoy, solo "Color de fondo" — a la
   /// cuadrícula no le importa si sus opciones son SVGs o colores, solo las
   /// dibuja (ver [AvatarSelectableThumbnail]).
   layer,
 
   /// La categoría combina **dos** selectores en la misma pantalla: primero
-  /// una fila de colores ([AvatarOptionRow], y debajo una
-  /// cuadrícula de formas ilustradas ([AvatarOptionGrid].
-  ///  Hoy la usan Vestuario, Cabello y
+  /// una fila de colores ([AvatarOptionRow], máximo
+  /// [AvatarCreatorConfig.maxRowOptions], ver [colorOptions]) y debajo una
+  /// cuadrícula de formas ilustradas ([AvatarOptionGrid], máximo
+  /// [AvatarCreatorConfig.maxGridOptions], ver
+  /// [AvatarLayerCategory.options]). Hoy la usan Vestuario, Cabello y
   /// Rostro (color + estilo/forma/expresión).
+  ///
+  /// El color no se "aplica" a la forma en tiempo de ejecución: el equipo de
+  /// diseño entrega un SVG distinto ya coloreado por cada combinación de
+  /// forma + color (ver [AvatarLayerCategory.resolveAssetPath]), así que
+  /// elegir un color en la fila simplemente hace que se muestre el archivo
+  /// correspondiente a esa combinación — tanto en la forma ya seleccionada
+  /// como en **todas** las demás miniaturas de la cuadrícula, para que, por
+  /// ejemplo, si el usuario elige "morado" en "Color del pelo", todos los
+  /// cortes de "Forma del pelo" se vean morados.
   layerWithColor,
 }
 
@@ -31,8 +48,13 @@ enum AvatarCategoryKind {
 /// 1. El orden de los tabs de navegación que ve el usuario.
 /// 2. El orden en que se apilan (z-index) las capas ilustradas en el
 ///    preview: cada categoría que no sea la de fondo (ver [isBackground])
-///    se dibuja encima de la anterior
+///    se dibuja encima de la anterior (ver
+///    [AvatarCreatorController.layerAssetPaths]).
 ///
+/// Este orden **no es libre para el canal que consume el widget**: viene
+/// definido por la especificación de diseño de Bancolombia y por eso el
+/// catálogo por defecto vive dentro de esta librería
+/// ([defaultAvatarCatalog]), no en la app que la embebe.
 class AvatarLayerCategory {
   const AvatarLayerCategory({
     required this.id,
@@ -71,16 +93,22 @@ class AvatarLayerCategory {
   final String id;
 
   /// Nombre de la categoría, usado como etiqueta accesible del tab de
-  /// navegación, también como título visible de la secciónde opciones.
+  /// navegación (ver [AvatarCategoryTabs]) y, en categorías de tipo
+  /// [AvatarCategoryKind.layer], también como título visible de la sección
+  /// de opciones (ver [AvatarSectionLabel]). En categorías de tipo
+  /// [AvatarCategoryKind.layerWithColor] el título visible lo dan en cambio
+  /// [colorSectionLabel] y [shapeSectionLabel] — [label] ahí solo se usa
+  /// para accesibilidad del tab.
   final String label;
 
-  /// Icono que se dibuja en el tab de navegación de esta categoría.
-  /// Usa el tipo [IconData] de Flutter, el mismo que
+  /// Icono que se dibuja en el tab de navegación de esta categoría (ver
+  /// [AvatarCategoryTabs]). Usa el tipo [IconData] de Flutter, el mismo que
   /// recibe cualquier widget `Icon(...)`.
   final IconData icon;
 
   /// Define si esta categoría se presenta como una única cuadrícula o como
-  /// fila de color + cuadrícula de forma combinadas.
+  /// fila de color + cuadrícula de forma combinadas. Ver
+  /// [AvatarCategoryKind].
   final AvatarCategoryKind kind;
 
   /// Opciones de forma/ilustración (o de color, si es la categoría de

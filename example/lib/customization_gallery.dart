@@ -70,6 +70,14 @@ class CustomizationGalleryScreen extends StatelessWidget {
                 'no las primeras de cada categoria.',
             onOpen: () => _openDemo(context, _editExistingConfig()),
           ),
+          _DemoCard(
+            title: '7. Callbacks de analitica/eventos',
+            description:
+                'onView, onSave, onSaveSuccess, onSaveError y onCancel '
+                'conectados a SnackBars visibles, para ver exactamente '
+                'cuando se dispara cada uno durante una sesion real.',
+            onOpen: () => _openDemo(context, _callbacksConfig(context)),
+          ),
         ],
       ),
     );
@@ -167,6 +175,22 @@ AvatarCreatorConfig _editExistingConfig() {
       'face_color': '2',
       'background': 'blue',
     }),
+  );
+}
+
+AvatarCreatorConfig _callbacksConfig(BuildContext context) {
+  final messenger = ScaffoldMessenger.of(context);
+  void toast(String text) =>
+      messenger.showSnackBar(SnackBar(content: Text(text)));
+
+  return AvatarCreatorConfig(
+    title: 'Avatar (con callbacks)',
+    onView: () => toast('onView: el usuario ya esta viendo el creador'),
+    onSave: () => toast('onSave: se toco "Guardar"'),
+    onSaveSuccess: (result) =>
+        toast('onSaveSuccess: ${result.selection.length} categorias guardadas'),
+    onSaveError: (error) => toast('onSaveError: $error'),
+    onCancel: () => toast('onCancel: se cerro sin guardar'),
   );
 }
 

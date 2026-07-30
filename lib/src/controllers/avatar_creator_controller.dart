@@ -26,18 +26,30 @@ import '../models/avatar_selection.dart';
 /// 3. En la UI, [AvatarCreatorScreen] envuelve esta clase con un
 ///    [AvatarCreatorScope] (un `InheritedNotifier` propio de este paquete,
 ///    sin depender de paquetes externos como `provider`) y los widgets
-///    hijos la leen con `final controller = AvatarCreatorScope.of(context)`.
-///    Eso hace que el widget se reconstruya automáticamente cada vez que se
-///    llama a `notifyListeners()`, sin que tengas que pasar el estado a mano
-///    por cada constructor.
+///    hijos la leen con `AvatarCreatorScope.of(context)`. Eso hace que el
+///    widget se reconstruya automáticamente cada vez que se llama a
+///    `notifyListeners()`, sin que tengas que pasar el estado a mano por
+///    cada constructor.
 ///
-/// este controlador es la "fuente de verdad" única, y los
+/// En otras palabras: este controlador es la "fuente de verdad" única, y los
 /// widgets (`AvatarPreview`, `AvatarCategoryTabs`, `AvatarOptionGrid`, etc.)
 /// simplemente reflejan lo que hay aquí dentro.
 ///
+/// ### Reglas de interacción que este controlador respeta
+/// Al tocar una opción, la selección se actualiza de inmediato (sin pedir
+/// confirmación) y el preview se redibuja al instante. Cambiar de categoría
+/// (tab) **no** borra lo elegido en las demás categorías: cada categoría
+/// conserva su propia selección en memoria mientras el usuario navega. Todo
+/// ese estado en memoria se pierde solo si el usuario cancela o cierra sin
+/// guardar (eso lo maneja [AvatarCreatorScreen], no este controlador).
 class AvatarCreatorController extends ChangeNotifier {
-  /// [initialSelection] llega un (`Map<String, String>` plano,
-  /// no un `Future`): quien construye el controlador.
+  /// [initialSelection] llega ya resuelto (un `Map<String, String>` plano,
+  /// no un `Future`): quien construye el controlador —
+  /// [AvatarCreatorScreen] — es responsable de esperar el
+  /// `Future<Map<String, String>>?` de [AvatarCreatorConfig.initialSelection]
+  /// antes de crear esta instancia, ya que un [ChangeNotifier] no tiene
+  /// forma natural de representar "todavía estoy cargando mi estado
+  /// inicial".
   AvatarCreatorController({
     required List<AvatarLayerCategory> categories,
     Map<String, String>? initialSelection,
