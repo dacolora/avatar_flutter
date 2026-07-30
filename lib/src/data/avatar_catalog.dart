@@ -14,8 +14,8 @@ const String _noneThumbnailAssetPath = 'assets/avatar/none.svg';
 ///
 /// Esta función es, junto con [AvatarCreatorConfig], la otra mitad de la
 /// frontera librería/canal: aquí es donde vive el contenido que el equipo de
-/// diseño de Bancolombia definió como "el" catálogo oficial (Vestuario,
-/// Cabello, Rostro, Accesorios y Color de fondo). El canal normalmente
+/// diseño de Bancolombia definió como "el" catálogo oficial (Rostro,
+/// Cabello, Vestuario, Accesorios y Color de fondo). El canal normalmente
 /// **no** llama a esta función directamente ni la sobreescribe:
 /// [AvatarCreatorScreen] la usa automáticamente cuando el canal no provee
 /// [AvatarCreatorConfig.categories].
@@ -23,7 +23,7 @@ const String _noneThumbnailAssetPath = 'assets/avatar/none.svg';
 /// El **orden** de la lista que devuelve importa por dos motivos a la vez:
 /// es el orden de los tabs de navegación que ve el usuario, y es también el
 /// orden de apilado (z-index) en el preview — cada capa se dibuja encima de
-/// la anterior, de más al fondo (Vestuario) a más al frente (Accesorios). La
+/// la anterior, de más al fondo (Rostro) a más al frente (Accesorios). La
 /// categoría de fondo ("background") no cuenta para el apilado: no es una
 /// capa SVG, es el color detrás de todas ellas (ver
 /// [AvatarLayerCategory.isBackground]).

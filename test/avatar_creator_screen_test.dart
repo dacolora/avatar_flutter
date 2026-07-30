@@ -21,10 +21,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // La categoría activa por defecto es la primera del catálogo
-    // (Vestuario, de tipo layerWithColor); sus dos etiquetas de sección
+    // (Rostro, de tipo layerWithColor); sus dos etiquetas de sección
     // deben estar visibles.
-    expect(find.text('Color de vestuario'), findsWidgets);
-    expect(find.text('Estilo de vestuario'), findsWidgets);
+    expect(find.text('Tono de piel'), findsWidgets);
+    expect(find.text('Expresión'), findsWidgets);
   });
 
   testWidgets(
@@ -50,7 +50,7 @@ void main() {
 
     // Una vez resuelto, el indicador desaparece y la pantalla se construye.
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Color de vestuario'), findsWidgets);
+    expect(find.text('Tono de piel'), findsWidgets);
   });
 
   testWidgets('cambiar de tab conserva la selección de las demás categorías',
@@ -147,8 +147,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Vestuario ya es la categoría activa por defecto (es la primera del
-    // catálogo), así que no hace falta tocar su tab.
+    await tester.tap(find.bySemanticsLabel('Vestuario'));
+    await tester.pumpAndSettle();
+
     expect(tester.takeException(), isNull);
     expect(find.text('Color de vestuario'), findsWidgets);
     expect(find.text('Estilo de vestuario'), findsWidgets);

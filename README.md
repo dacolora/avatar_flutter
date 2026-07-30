@@ -78,7 +78,7 @@ concretas:
 
 | Responsabilidad | Librería (`avatar_flutter`) | Canal (la app que la embebe) |
 |---|---|---|
-| Catálogo oficial y su orden (Vestuario, Cabello, Rostro, Accesorios, Color de fondo) | ✅ Definido en `defaultAvatarCatalog()`, es lo que se usa si el canal no pasa `categories` | ⚠️ Puede reemplazarlo por completo — con menos categorías, con más, o agregando una propia (ver [Personalización](#personalización-qué-puede-parametrizar-el-canal)) |
+| Catálogo oficial y su orden (Rostro, Cabello, Vestuario, Accesorios, Color de fondo) | ✅ Definido en `defaultAvatarCatalog()`, es lo que se usa si el canal no pasa `categories` | ⚠️ Puede reemplazarlo por completo — con menos categorías, con más, o agregando una propia (ver [Personalización](#personalización-qué-puede-parametrizar-el-canal)) |
 | Diseño visual de header, preview, tabs, grid/row, footer | ✅ Fijado por la especificación de diseño | ⚠️ Puede cambiar textos, alturas del preview, columnas del grid y máximos por categoría — ver `AvatarCreatorConfig` |
 | Guardar la selección en memoria mientras el usuario navega entre tabs | ✅ `AvatarCreatorController` | — |
 | Componer las capas seleccionadas en una imagen | ✅ `AvatarCreatorController.save()` (captura el `RepaintBoundary` del preview) | — |
