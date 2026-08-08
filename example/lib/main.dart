@@ -4,6 +4,7 @@ import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'avatar_home_widget_sync.dart';
 import 'customization_gallery.dart';
 
 void main() => runApp(const AvatarFlutterExampleApp());
@@ -129,6 +130,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
       await _saveSelection(result.selection);
+      // Además de persistir la selección, se sincroniza el PNG con el
+      // widget nativo de pantalla de inicio (ver README, "Widget de
+      // pantalla de inicio (iOS y Android)").
+      await AvatarHomeWidgetSync.sync(result.imageBytes);
     }
   }
 

@@ -426,6 +426,117 @@ categoría, o transparente si no hay categoría de fondo) — por dentro,
 únicamente para reutilizar esa lógica de resolución, sin insertarlo en el
 árbol de widgets ni escucharlo.
 
+## Widget de pantalla de inicio (iOS y Android)
+
+Esto es distinto a todo lo anterior: no es un `Widget` de Flutter, sino un
+widget *nativo* de pantalla de inicio (el tipo de widget redimensionable de
+la galería de iOS/Android, como el "Pila inteligente" de iOS) que muestra el
+último avatar guardado.
+
+**Por qué esto vive en `example/` y no en `avatar_flutter`.** Un widget de
+pantalla de inicio depende del bundle ID, del App Group y del ícono de cada
+app — es, por definición, responsabilidad del canal, el mismo principio que
+ya rige el resto de este README ("¿Qué es responsabilidad de la librería y
+qué es responsabilidad del canal?"). `avatar_flutter` solo pone a
+disposición `AvatarCreatorResult.imageBytes`; armar el widget nativo con eso
+le toca a cada canal. Por eso todo lo de esta sección vive dentro de
+`example/`, como referencia que cada canal adapta a su propio bundle ID.
+
+**Limitación importante:** el código de esta sección no se compiló ni se
+corrió — se escribió sin Xcode, sin Android Studio y sin el SDK de Flutter
+instalados. Antes de darlo por bueno hay que abrir el proyecto con esas
+herramientas y seguir los pasos de abajo.
+
+### Cómo fluyen los datos
+
+1. El canal guarda el avatar como siempre, con `result.imageBytes` (ver
+   `_openAvatarCreator` en `example/lib/main.dart`).
+2. Justo después, `AvatarHomeWidgetSync.sync(result.imageBytes)`
+   (`example/lib/avatar_home_widget_sync.dart`) codifica ese PNG en base64 y
+   lo guarda con el paquete [`home_widget`](https://pub.dev/packages/home_widget)
+   bajo la llave `avatar_widget_image_base64`, en el almacenamiento que
+   comparten la app y el widget: `UserDefaults(suiteName:)` del App Group en
+   iOS, `SharedPreferences` en Android (ahí no hace falta App Group: el
+   widget corre en el mismo paquete que la app).
+3. `HomeWidget.updateWidget(iOSName: "AvatarWidget", androidName:
+   "AvatarWidgetProvider")` le avisa a cada plataforma que recargue el
+   widget.
+4. Si algo de esto falla (por ejemplo, porque todavía no se configuró el
+   App Group o el `AppWidgetProvider`), `AvatarHomeWidgetSync.sync` lo
+   atrapa y solo lo imprime en consola — no debe tumbar el guardado normal
+   del avatar.
+
+Los tres nombres que tienen que coincidir exactamente entre Dart y el
+código nativo (`iosAppGroupId`, `iosWidgetKind`/`kind`,
+`androidProviderName`) están documentados como constantes, comentadas, en
+`avatar_home_widget_sync.dart`.
+
+### iOS: crear el target de Widget Extension
+
+Los archivos Swift ya están escritos en `example/ios/AvatarWidget/`
+(`AvatarWidgetBundle.swift`, `AvatarWidget.swift`, `AvatarWidgetView.swift`,
+`Info.plist`, `AvatarWidget.entitlements`) — lo que falta es crear el target
+en Xcode y sumarlos ahí, porque eso requiere el editor de proyecto de Xcode
+(no se puede hacer editando `project.pbxproj` a mano de forma segura):
+
+1. Abrí `example/ios/Runner.xcworkspace` en Xcode.
+2. **File > New > Target… > Widget Extension**. Nombre: `AvatarWidget`.
+   Desmarcá "Include Configuration Intent" (este widget no tiene
+   configuración). Cuando Xcode pregunte si activar el nuevo esquema,
+   aceptá.
+3. Xcode crea un grupo `AvatarWidget/` con archivos de ejemplo
+   (`AvatarWidgetBundle.swift`, etc.) — borralos y arrastrá en su lugar los
+   4 archivos Swift + `Info.plist` que ya están en
+   `example/ios/AvatarWidget/` (destildá "Copy items if needed" si Xcode
+   los ofrece copiar; ya están en la carpeta correcta).
+4. Seleccioná el target **Runner** > pestaña **Signing & Capabilities** >
+   **+ Capability** > **App Groups** > creá un grupo nuevo, por ejemplo
+   `group.<tu-bundle-id>.avatarwidget`. Repetí en el target **AvatarWidget**
+   con el **mismo** grupo. Esto reemplaza a los `.entitlements` de
+   referencia que ya están en el repo (`Runner/Runner.entitlements`,
+   `AvatarWidget/AvatarWidget.entitlements`) — Xcode los regenera y los
+   asocia solo al activar la capability así.
+5. Actualizá el App Group ID en tres lugares para que coincidan con el que
+   creaste en el paso 4: `AvatarHomeWidgetSync.iosAppGroupId` (Dart) y la
+   constante `appGroupId` en `AvatarWidget.swift`.
+6. Corré el target **AvatarWidget** en el simulador (o el target `Runner`
+   y agregá el widget manualmente desde la galería, mantenido presionado en
+   el Home). Guardá un avatar en la app para ver que el widget se actualiza.
+
+### Android: agregar la plataforma y el `AppWidgetProvider`
+
+`example/` todavía no tiene carpeta `android/` — hay que generarla primero
+con las herramientas de Flutter (no a mano, para no desalinear versiones de
+Gradle/AGP con las que espera el SDK instalado):
+
+1. Desde `example/`: `flutter create --platforms=android .`
+2. Anotá el `applicationId` que quedó en
+   `android/app/build.gradle` (o `build.gradle.kts`).
+3. Copiá los archivos de `example/android_widget_reference/` al árbol
+   generado:
+   - `app/src/main/kotlin/.../AvatarWidgetProvider.kt` → la carpeta de
+     Kotlin que coincide con tu `applicationId` (ajustá también la línea
+     `package` del archivo).
+   - `app/src/main/res/layout/avatar_widget.xml` → mismo path.
+   - `app/src/main/res/xml/avatar_widget_info.xml` → mismo path.
+4. Copiá el `<receiver>` de `AndroidManifest_snippet.xml` dentro de la
+   etiqueta `<application>` de `android/app/src/main/AndroidManifest.xml`.
+5. Corré `flutter run` en un emulador/dispositivo Android, mantené
+   presionado el Home y agregá el widget "Mi avatar" desde la galería.
+   Guardá un avatar en la app para ver que se actualiza.
+
+### Tamaños soportados
+
+| Tamaño | iOS | Android |
+| --- | --- | --- |
+| Chico | `.systemSmall`: solo el avatar | `minWidth`/`minHeight` (80dp): solo el avatar |
+| Mediano/grande | `.systemMedium`/`.systemLarge`: avatar + "Tu avatar" + "Toca para editar" | al agrandarlo por encima de `CAPTION_MIN_WIDTH_DP`: mismo texto |
+
+Las tres variantes de iOS llevan un `widgetURL` placeholder
+(`avatarflutterexample://avatar`); `avatar_flutter` no define un esquema de
+deep link propio, así que cada canal debe registrar el suyo y manejarlo
+donde abre `_openAvatarCreator()`.
+
 ## Desarrollo
 
 ```
