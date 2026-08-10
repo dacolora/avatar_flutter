@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'avatar_home_widget_sync.dart';
@@ -91,6 +93,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await prefs.setString(_selectionPrefsKey, jsonEncode(selection));
   }
 
+  /// Escribe `result.toJpg()` a un archivo en el almacenamiento propio de la
+  /// app y devuelve la ruta. Es el paso que falta después de generar los
+  /// bytes del JPG (`AvatarCreatorResult.toJpg`, en la librería) para que la
+  /// imagen sea *descargable* de verdad y no solo bytes en memoria — acá es
+  /// donde ese paso le toca al canal, igual que ya pasa con
+  /// `_saveSelection`.
+  Future<String> _downloadAvatarAsJpg(AvatarCreatorResult result) async {
+    final jpgBytes = await result.toJpg();
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File(
+      '${directory.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+    await file.writeAsBytes(jpgBytes);
+    return file.path;
+  }
+
   /// Abre la pantalla del creador de avatar y reacciona a su resultado.
   ///
   /// Este método concentra el ejemplo más claro de la frontera de
@@ -134,6 +152,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // widget nativo de pantalla de inicio (ver README, "Widget de
       // pantalla de inicio (iOS y Android)").
       await AvatarHomeWidgetSync.sync(result.imageBytes);
+      // Y se descarga una copia en JPG (ver README, "Descargar el avatar
+      // como JPG").
+      final jpgPath = await _downloadAvatarAsJpg(result);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Avatar descargado como JPG: $jpgPath')),
+        );
+      }
     }
   }
 

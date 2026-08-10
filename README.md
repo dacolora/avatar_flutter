@@ -426,6 +426,48 @@ categoría, o transparente si no hay categoría de fondo) — por dentro,
 únicamente para reutilizar esa lógica de resolución, sin insertarlo en el
 árbol de widgets ni escucharlo.
 
+## Descargar el avatar como JPG
+
+`AvatarCreatorResult.imageBytes` es un PNG (ver "5. Guardar" más arriba). Si
+el canal necesita entregarle al usuario una imagen descargable en JPG —más
+liviana, más compatible con flujos de "compartir" o "subir foto" que esperan
+ese formato—, `AvatarCreatorResult` tiene un método para eso:
+
+```dart
+final jpgBytes = await result.toJpg(); // Uint8List, listo para escribir/compartir
+```
+
+`toJpg()` reutiliza el mismo `imageBytes` ya generado (no vuelve a tocar el
+`RepaintBoundary` ni la pantalla): decodifica ese PNG y lo vuelve a codificar
+como JPG. Dos parámetros opcionales:
+
+* `backgroundColor` (blanco por defecto): JPG no soporta transparencia, y el
+  PNG del avatar **sí** tiene zonas transparentes (las esquinas fuera del
+  círculo, recortadas con `ClipOval` — ver `AvatarPreview`). `toJpg()`
+  "aplana" esas zonas sobre este color antes de codificar, para que no
+  queden negras (el resultado por defecto de la mayoría de decodificadores
+  de JPG frente a un canal alfa que no entienden).
+* `quality` (92 por defecto): calidad de compresión JPG, de 0 a 100.
+
+Igual que con `imageBytes`, generar los bytes es responsabilidad de la
+librería; **escribirlos a un archivo, subirlos o compartirlos es
+responsabilidad del canal**. `example/lib/main.dart` (método
+`_downloadAvatarAsJpg`) muestra el paso que falta para que sea una imagen
+descargable de verdad:
+
+```dart
+Future<String> _downloadAvatarAsJpg(AvatarCreatorResult result) async {
+  final jpgBytes = await result.toJpg();
+  final directory = await getApplicationDocumentsDirectory(); // package:path_provider
+  final file = File('${directory.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg');
+  await file.writeAsBytes(jpgBytes);
+  return file.path;
+}
+```
+
+En la app de ejemplo esto se llama automáticamente después de guardar el
+avatar, y muestra la ruta del archivo en un `SnackBar`.
+
 ## Widget de pantalla de inicio (iOS y Android)
 
 Esto es distinto a todo lo anterior: no es un `Widget` de Flutter, sino un
