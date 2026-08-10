@@ -1,6 +1,8 @@
 import 'package:avatar_flutter/avatar_flutter.dart';
 import 'package:flutter/material.dart';
 
+import 'cached_avatar_image.dart';
+
 /// Galeria de ejemplos de personalizacion de `avatar_flutter`.
 ///
 /// Este archivo es **codigo del canal, no de la libreria** (igual que
@@ -14,7 +16,19 @@ class CustomizationGalleryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ejemplos de personalizacion')),
+      appBar: AppBar(
+        title: const Text('Ejemplos de personalizacion'),
+        actions: const [
+          // Misma imagen que en `ProfileScreen`, leída de nuevo desde el
+          // caché del celular (ver `AvatarImageCache`): prueba de que
+          // `CachedAvatarImage` se renderiza en cualquier pantalla de la
+          // app sin que nadie le pase el estado a mano.
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: CachedAvatarImage(radius: 18),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

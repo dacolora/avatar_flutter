@@ -426,6 +426,51 @@ categoría, o transparente si no hay categoría de fondo) — por dentro,
 únicamente para reutilizar esa lógica de resolución, sin insertarlo en el
 árbol de widgets ni escucharlo.
 
+## Cachear el avatar en el celular para renderizarlo desde cualquier pantalla
+
+Antes de esto, `example/` solo guardaba dos cosas: la *selección*
+(`SharedPreferences`, sobrevive a reabrir la app) y la *imagen ya generada*
+(`_avatarImageProvider`, un campo en memoria que se perdía en cada hot
+restart — para volver a verla sin los bytes del PNG había que recomponerla
+con `AvatarStaticPreview` a partir de la selección). No había ningún lugar
+donde la imagen ya renderizada quedara disponible, de una, para cualquier
+otra pantalla.
+
+`AvatarImageCache` (`example/lib/avatar_image_cache.dart`) cierra ese hueco:
+guarda el PNG de `result.imageBytes` en el **directorio de caché de la
+app**, en el celular de quien la está usando —no en memoria, no en esta
+computadora, no en ningún servidor—, con
+[`path_provider`](https://pub.dev/packages/path_provider):
+
+```dart
+final directory = await getApplicationCacheDirectory();
+final file = File('${directory.path}/avatar_cache.png');
+await file.writeAsBytes(imageBytes, flush: true);
+```
+
+Es justamente lo que en Android es `context.cacheDir` y en iOS
+`Library/Caches`: persiste entre sesiones (a diferencia de un campo en
+memoria), pero el sistema operativo lo puede liberar si el dispositivo
+necesita espacio — por eso `AvatarImageCache.read()` puede devolver `null`.
+
+**Para que se renderice desde cualquier parte de la app**, ese archivo se
+lee a través de un widget reutilizable,
+`CachedAvatarImage` (`example/lib/cached_avatar_image.dart`), que no
+depende de ningún estado en memoria: cada instancia relee el mismo archivo
+por su cuenta. `ProfileScreen` lo usa para el avatar principal, y
+`CustomizationGalleryScreen` lo vuelve a usar en su `AppBar` — dos
+pantallas distintas, la misma imagen cacheada, sin pasarse nada entre
+ellas:
+
+```dart
+CachedAvatarImage(radius: 56, selectionFallback: _savedSelection)
+```
+
+Si todavía no hay nada cacheado (primer uso del dispositivo, o el sistema
+operativo liberó el caché), `selectionFallback` es la misma selección
+persistida de siempre: `CachedAvatarImage` cae de vuelta a
+`AvatarStaticPreview` con ella, en vez de mostrar un placeholder vacío.
+
 ## Descargar el avatar como JPG
 
 `AvatarCreatorResult.imageBytes` es un PNG (ver "5. Guardar" más arriba). Si

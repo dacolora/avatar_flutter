@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'avatar_home_widget_sync.dart';
+import 'avatar_image_cache.dart';
+import 'cached_avatar_image.dart';
 import 'customization_gallery.dart';
 
 void main() => runApp(const AvatarFlutterExampleApp());
@@ -36,23 +38,21 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  /// La imagen del avatar guardada más recientemente, ya como un
-  /// `ImageProvider` listo para pasarle directo a `CircleAvatar.
-  /// backgroundImage` (ver [AvatarCreatorResult.imageProvider] — evita tener
-  /// que envolver `result.imageBytes` en un `MemoryImage` a mano). Nótese
-  /// que esto vive **aquí**, en el estado del canal, no dentro de la
-  /// librería: es precisamente la responsabilidad de persistencia que le
-  /// corresponde al canal (en una app real, en vez de guardarla solo en
-  /// memoria como aquí, se subiría a un servidor o se guardaría en disco).
-  ImageProvider? _avatarImageProvider;
+  /// Se incrementa cada vez que se guarda un avatar nuevo, y se usa como
+  /// `key` de [CachedAvatarImage] en [build] para forzarlo a releer el
+  /// archivo de [AvatarImageCache] (un `FutureBuilder` con la misma `key`
+  /// no vuelve a ejecutar su `future`, así que sin esto seguiría mostrando
+  /// la imagen vieja hasta el próximo rebuild "de casualidad"). El avatar
+  /// en sí ya no se guarda en un campo en memoria: vive en el caché del
+  /// celular (ver [AvatarImageCache]), no aquí.
+  int _avatarCacheVersion = 0;
 
   /// La selección guardada la última vez (ver [_loadSavedSelection]),
-  /// cargada en [initState]. A diferencia de [_avatarImageProvider] —que
-  /// solo vive en memoria y por lo tanto se pierde en cada hot restart—
-  /// esta selección viene de `SharedPreferences`, así que sigue disponible
-  /// después de un hot restart (o de reabrir la app). Se dibuja con
-  /// [AvatarStaticPreview] en vez de esperar a tener de nuevo los bytes del
-  /// PNG, que nunca se persisten en este ejemplo.
+  /// cargada en [initState]. Se le pasa a [CachedAvatarImage] como
+  /// respaldo: si el caché de imagen (ver [AvatarImageCache]) todavía no
+  /// existe o el sistema operativo ya lo liberó, se recompone el avatar con
+  /// `AvatarStaticPreview` a partir de esta selección en vez de mostrar un
+  /// placeholder vacío.
   Map<String, String>? _savedSelection;
 
   @override
@@ -141,16 +141,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // para subirlos a un servidor); result.imageProvider es la versión ya
     // lista para mostrarse en un widget de imagen.
     if (result is AvatarCreatorResult) {
+      await _saveSelection(result.selection);
+      // El PNG compuesto se guarda en el caché de la app (en el celular de
+      // quien la está usando, no en memoria ni en esta computadora) para
+      // que cualquier pantalla lo pueda mostrar sin volver a componerlo —
+      // ver [AvatarImageCache] y [CachedAvatarImage].
+      await AvatarImageCache.save(result.imageBytes);
       if (mounted) {
         setState(() {
-          _avatarImageProvider = result.imageProvider;
+          _avatarCacheVersion++;
           _savedSelection = result.selection;
         });
       }
-      await _saveSelection(result.selection);
-      // Además de persistir la selección, se sincroniza el PNG con el
-      // widget nativo de pantalla de inicio (ver README, "Widget de
-      // pantalla de inicio (iOS y Android)").
+      // Además de cachear el PNG, se sincroniza con el widget nativo de
+      // pantalla de inicio (ver README, "Widget de pantalla de inicio (iOS
+      // y Android)").
       await AvatarHomeWidgetSync.sync(result.imageBytes);
       // Y se descarga una copia en JPG (ver README, "Descargar el avatar
       // como JPG").
@@ -222,22 +227,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           button: true,
           child: GestureDetector(
             onTap: _openEditImageSheet,
-            // Tres estados posibles: (1) ya se guardó un avatar en esta
-            // misma sesión -> se dibuja de inmediato con la imagen ya
-            // generada (`_avatarImageProvider`, sin esperar nada). (2) no
-            // hay imagen en memoria pero sí una selección persistida de
-            // una sesión anterior -> se recompone con
-            // `AvatarStaticPreview`, que no necesita los bytes del PNG,
-            // solo el mismo `Map<String, String>` guardado. (3) ninguna de
-            // las dos -> ícono de placeholder.
-            child: _avatarImageProvider != null
-                ? CircleAvatar(
-                    radius: 56, backgroundImage: _avatarImageProvider)
-                : _savedSelection != null
-                    ? AvatarStaticPreview(
-                        selection: _savedSelection!, size: 112)
-                    : const CircleAvatar(
-                        radius: 56, child: Icon(Icons.person, size: 48)),
+            // `key: ValueKey(_avatarCacheVersion)` es lo que fuerza a
+            // releer el archivo del caché después de guardar un avatar
+            // nuevo (ver el comentario de `_avatarCacheVersion`).
+            child: CachedAvatarImage(
+              key: ValueKey(_avatarCacheVersion),
+              radius: 56,
+              selectionFallback: _savedSelection,
+            ),
           ),
         ),
       ),
