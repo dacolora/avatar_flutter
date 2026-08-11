@@ -54,9 +54,9 @@ if (resultado is AvatarCreatorResult) {
 ```
 
 Puedes ver un ejemplo funcional completo en `example/lib/main.dart`: una
-pantalla de perfil que ofrece "Cámara / Galería / Avatar / Cerrar" y, al
-elegir "Avatar", abre `AvatarCreatorScreen` y usa el resultado para actualizar
-el `CircleAvatar` de la pantalla.
+pantalla de perfil con dos tarjetas, cada una abriendo `AvatarCreatorScreen`
+y orquestando el resultado de una forma distinta — ver "Dos formas de
+orquestar la imagen del avatar" más abajo.
 
 ## ¿Qué es responsabilidad de la librería y qué es responsabilidad del canal?
 
@@ -426,20 +426,38 @@ categoría, o transparente si no hay categoría de fondo) — por dentro,
 únicamente para reutilizar esa lógica de resolución, sin insertarlo en el
 árbol de widgets ni escucharlo.
 
-## Cachear el avatar en el celular para renderizarlo desde cualquier pantalla
+## Dos formas de orquestar la imagen del avatar
 
-Antes de esto, `example/` solo guardaba dos cosas: la *selección*
-(`SharedPreferences`, sobrevive a reabrir la app) y la *imagen ya generada*
-(`_avatarImageProvider`, un campo en memoria que se perdía en cada hot
-restart — para volver a verla sin los bytes del PNG había que recomponerla
-con `AvatarStaticPreview` a partir de la selección). No había ningún lugar
-donde la imagen ya renderizada quedara disponible, de una, para cualquier
-otra pantalla.
+`AvatarCreatorResult` le da al canal dos cosas — `selection` (texto, unas
+decenas de bytes) e `imageBytes` (el PNG ya renderizado) — y **cuáles de
+las dos persiste, y cómo**, es una decisión del canal, con tradeoffs
+distintos. Para que esa decisión sea visible en vez de quedar escondida
+dentro de un solo flujo, `ProfileScreen` (`example/lib/main.dart`) muestra
+**dos tarjetas independientes**, cada una orquestando la imagen a su
+manera, sin compartir estado ni almacenamiento entre sí:
 
-`AvatarImageCache` (`example/lib/avatar_image_cache.dart`) cierra ese hueco:
-guarda el PNG de `result.imageBytes` en el **directorio de caché de la
-app**, en el celular de quien la está usando —no en memoria, no en esta
-computadora, no en ningún servidor—, con
+| | Opción A — `MapOnlyAvatarCard` | Opción B — `CachedImageAvatarCard` |
+| --- | --- | --- |
+| Qué persiste | Solo `result.selection` (`SharedPreferences`) | Solo el PNG de `result.imageBytes` (`AvatarImageCache`) |
+| Cómo se muestra | Se recompone en vivo con `AvatarStaticPreview` cada vez | Se relee el archivo ya renderizado con `CachedAvatarImage` |
+| Costo de guardar | Mínimo (texto) | Mayor (el PNG completo) |
+| Costo de mostrar | Recompone las capas SVG cada vez | Ninguno: ya está renderizado |
+| Reabrir el editor | Arranca con la última selección (`initialSelection`) | Arranca en blanco — no hay mapa guardado con qué prellenarlo |
+| Además dispara | Nada más | Sincroniza el widget nativo de pantalla de inicio y descarga el JPG |
+
+Ninguna de las dos es "la correcta": un canal que solo necesita mostrar el
+avatar en un lugar barato de recomponer (poco tráfico, tamaño chico) puede
+preferir la Opción A; uno que lo muestra en muchos lugares o lo necesita
+también para el widget nativo / la descarga en JPG sale ganando con la
+Opción B. Nada impide combinar ambas (como hacía este ejemplo antes de
+separarlas en dos tarjetas) — separarlas acá es a propósito, para que el
+tradeoff quede notorio.
+
+### Opción B, en detalle: `AvatarImageCache`
+
+`AvatarImageCache` (`example/lib/avatar_image_cache.dart`) guarda el PNG en
+el **directorio de caché de la app**, en el celular de quien la está
+usando —no en memoria, no en esta computadora, no en ningún servidor—, con
 [`path_provider`](https://pub.dev/packages/path_provider):
 
 ```dart
@@ -453,23 +471,24 @@ Es justamente lo que en Android es `context.cacheDir` y en iOS
 memoria), pero el sistema operativo lo puede liberar si el dispositivo
 necesita espacio — por eso `AvatarImageCache.read()` puede devolver `null`.
 
-**Para que se renderice desde cualquier parte de la app**, ese archivo se
-lee a través de un widget reutilizable,
+Ese archivo se lee a través de un widget reutilizable,
 `CachedAvatarImage` (`example/lib/cached_avatar_image.dart`), que no
 depende de ningún estado en memoria: cada instancia relee el mismo archivo
-por su cuenta. `ProfileScreen` lo usa para el avatar principal, y
-`CustomizationGalleryScreen` lo vuelve a usar en su `AppBar` — dos
-pantallas distintas, la misma imagen cacheada, sin pasarse nada entre
-ellas:
+por su cuenta, así que se puede usar en **cualquier pantalla**, no solo en
+la que guardó la imagen. `CustomizationGalleryScreen` lo demuestra
+mostrando la misma imagen cacheada por `CachedImageAvatarCard` en su propio
+`AppBar`, sin que nadie le pase el estado a mano:
 
 ```dart
-CachedAvatarImage(radius: 56, selectionFallback: _savedSelection)
+CachedAvatarImage(radius: 56, selectionFallback: seleccionSiLaHay)
 ```
 
-Si todavía no hay nada cacheado (primer uso del dispositivo, o el sistema
-operativo liberó el caché), `selectionFallback` es la misma selección
-persistida de siempre: `CachedAvatarImage` cae de vuelta a
-`AvatarStaticPreview` con ella, en vez de mostrar un placeholder vacío.
+`selectionFallback` es opcional: si se le pasa una selección persistida
+(como hace la Opción A) y todavía no hay nada cacheado —primer uso, o el
+sistema operativo liberó el caché—, cae de vuelta a `AvatarStaticPreview`
+en vez de mostrar un placeholder vacío. `CachedImageAvatarCard` no le pasa
+ninguna, a propósito, para que quede claro que esta tarjeta no tiene ningún
+respaldo si el caché desaparece.
 
 ## Descargar el avatar como JPG
 
@@ -496,7 +515,7 @@ como JPG. Dos parámetros opcionales:
 
 Igual que con `imageBytes`, generar los bytes es responsabilidad de la
 librería; **escribirlos a un archivo, subirlos o compartirlos es
-responsabilidad del canal**. `example/lib/main.dart` (método
+responsabilidad del canal**. `example/lib/main.dart` (función
 `_downloadAvatarAsJpg`) muestra el paso que falta para que sea una imagen
 descargable de verdad:
 
@@ -510,8 +529,9 @@ Future<String> _downloadAvatarAsJpg(AvatarCreatorResult result) async {
 }
 ```
 
-En la app de ejemplo esto se llama automáticamente después de guardar el
-avatar, y muestra la ruta del archivo en un `SnackBar`.
+En la app de ejemplo esto se llama desde `CachedImageAvatarCard` (la
+Opción B de la sección anterior) justo después de guardar el avatar, y
+muestra la ruta del archivo en un `SnackBar`.
 
 ## Widget de pantalla de inicio (iOS y Android)
 
@@ -536,8 +556,9 @@ herramientas y seguir los pasos de abajo.
 
 ### Cómo fluyen los datos
 
-1. El canal guarda el avatar como siempre, con `result.imageBytes` (ver
-   `_openAvatarCreator` en `example/lib/main.dart`).
+1. El canal guarda el avatar con `result.imageBytes` (ver `_edit` en
+   `CachedImageAvatarCard`, `example/lib/main.dart` — la Opción B de "Dos
+   formas de orquestar la imagen del avatar").
 2. Justo después, `AvatarHomeWidgetSync.sync(result.imageBytes)`
    (`example/lib/avatar_home_widget_sync.dart`) codifica ese PNG en base64 y
    lo guarda con el paquete [`home_widget`](https://pub.dev/packages/home_widget)
@@ -622,7 +643,7 @@ Gradle/AGP con las que espera el SDK instalado):
 Las tres variantes de iOS llevan un `widgetURL` placeholder
 (`avatarflutterexample://avatar`); `avatar_flutter` no define un esquema de
 deep link propio, así que cada canal debe registrar el suyo y manejarlo
-donde abre `_openAvatarCreator()`.
+donde abre el editor (`_edit` en `CachedImageAvatarCard`).
 
 ## Desarrollo
 

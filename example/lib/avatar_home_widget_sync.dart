@@ -39,11 +39,12 @@ class AvatarHomeWidgetSync {
   /// en el almacenamiento compartido con el widget y le pide a la
   /// plataforma que lo refresque en la pantalla de inicio.
   ///
-  /// Se llama después de guardar el avatar (ver `_openAvatarCreator` en
-  /// `main.dart`); si falla —por ejemplo porque el canal todavía no
-  /// terminó de configurar el App Group en Xcode o el `AppWidgetProvider`
-  /// en Android— no interrumpe el flujo normal de guardado: el widget
-  /// nativo es un extra, no algo de lo que dependa el resto de la app.
+  /// Se llama después de guardar el avatar (ver `_edit` en
+  /// `CachedImageAvatarCard`, `main.dart`); si falla —por ejemplo porque el
+  /// canal todavía no terminó de configurar el App Group en Xcode o el
+  /// `AppWidgetProvider` en Android— no interrumpe el flujo normal de
+  /// guardado: el widget nativo es un extra, no algo de lo que dependa el
+  /// resto de la app.
   static Future<void> sync(Uint8List imageBytes) async {
     try {
       await HomeWidget.setAppGroupId(iosAppGroupId);

@@ -9,8 +9,8 @@ import SwiftUI
 /// El `widgetURL` en las tres variantes es un placeholder
 /// (`avatarflutterexample://avatar`): `avatar_flutter` no define un
 /// esquema de deep link propio, así que cada canal debe registrar el suyo
-/// (Info.plist -> `CFBundleURLTypes`) y manejarlo donde abre
-/// `_openAvatarCreator()` en `main.dart`.
+/// (Info.plist -> `CFBundleURLTypes`) y manejarlo donde abre el editor
+/// (`_edit` en `CachedImageAvatarCard`, `main.dart`).
 struct AvatarWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: AvatarEntry
