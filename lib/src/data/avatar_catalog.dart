@@ -75,7 +75,6 @@ List<AvatarLayerCategory> defaultAvatarCatalog() {
             id: '5', color: Color(0xFFCCA07C), semanticLabel: 'Tono de piel 5'),
       ],
     ),
-
     _coloredCategory(
       id: 'hair',
       label: 'Cabello',

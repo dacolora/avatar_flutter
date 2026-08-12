@@ -653,3 +653,320 @@ flutter analyze
 flutter test
 cd example && flutter pub get && flutter run
 ```
+
+
+import 'package:bds_mobile/atoms/bc_avatar/bc_avatar.dart';
+import 'package:bds_mobile/foundations/helpers/constraints/enumerables.dart';
+import 'package:bds_mobile/foundations/iconography/functional_icons.dart';
+import 'package:bds_mobile/molecules/bc_alert_v2/bc_alert_v2.dart';
+import 'package:bds_mobile/molecules/bc_alert_v2/models/bc_alert_v2_model.dart';
+import 'package:bds_mobile/utils/utils.dart';
+import 'package:bre_b_components/bre_b_components.dart';
+import 'package:domain_mobile/domain_mobile.dart';
+
+import 'package:flutter/material.dart';
+
+import '../../../../../financial_key_consult.dart' hide BcShortcutItemModel;
+
+/// ---------------------------------------------------------------------------
+/// ListFavoritesPagePresenter
+/// ---------------------------------------------------------------------------
+/// Widget tipo Presenter encargado de gestionar la pantalla completa de
+/// listado de favoritos.
+///
+/// Este componente maneja:
+/// - Carga inicial de favoritos desde el dominio (`FavoritesController`)
+/// - Estados de UI (loading, success, error)
+/// - Interacciones del usuario:
+///     - Seleccionar favorito
+///     - Agregar favorito
+///     - Editar favorito
+///     - Eliminar favorito (con confirmación)
+///     - Dismiss (swipe para eliminar)
+///
+/// Responsabilidades:
+///
+/// - Inicializar el controlador de favoritos.
+/// - Mantener la lista actual de favoritos en memoria.
+/// - Sincronizar los cambios con el backend mediante el usecase.
+/// - Mostrar feedback visual (alertas y errores).
+///
+/// Parámetros:
+/// - lógica de dominio para CRUD de favoritos.
+/// - [tapItem]: callback al seleccionar un elemento.
+/// - configuración visual del módulo (`CardMovePageModel`).
+/// - acción externa desde el botón derecho.
+/// - configuración del overlay de creación.
+/// - configuración del overlay de edición.
+/// - configuración del modal de confirmación.
+/// - [onAddCallback]: parametro que permite adicionar una funcion como Taggeo
+/// - [onBackCallback]: parametro que permite adicionar una funcion como Taggeo
+/// - [onDeleteCallback]: parametro que permite adicionar una funcion como Taggeo
+/// - [onEditCallback]: parametro que permite adicionar una funcion como Taggeo
+/// - [onCompleteCallback]: parametro que permite adicionar una funcion como Taggeo
+/// - [onConfirmDeleteCallback]: parametro que permite adicionar una funcion como Taggeo
+/// - [onDismissedCallback]: parametro que permite adicionar una funcion como Taggeo
+/// - [onTapCardCallback]: parametro que permite adicionar una funcion como Taggeo
+///
+/// Flujo principal:
+///
+/// 1. Al iniciar (`initState`)
+///    - Se instancia `FavoritesController`.
+///    - Se cargan los favoritos.
+///
+/// 2. Agregar favorito:
+///    - Abre overlay.
+///    - Ejecuta `controller.add`.
+///    - Recarga lista.
+///    - Muestra error si ocurre.
+///
+/// 3. Editar favorito:
+///    - Abre overlay con datos precargados.
+///    - Ejecuta `controller.update`.
+///    - Recarga lista.
+///
+/// 4. Eliminar favorito:
+///    - Muestra confirmación (`bcAlertDelete`).
+///    - Ejecuta `controller.delete`.
+///    - Recarga lista.
+///    - Muestra alerta de éxito.
+///
+/// 5. Dismiss (swipe):
+///    - Elimina directamente.
+///    - Recarga lista.
+///    - Muestra alerta.
+///
+/// Consideraciones:
+/// - Mezcla lógica de presentación con lógica de dominio.
+/// - Uso intensivo de `setState`.
+/// - Dependencias de UI dificultan test unitario puro.
+/// - Uso de `mounted` para evitar errores de lifecycle.
+///
+
+class ListFavoritesPagePresenter extends StatefulWidget {
+  const ListFavoritesPagePresenter({
+    required this.alertDeleteModel,
+    required this.editOverlayModel,
+    required this.usecase,
+    required this.tapItem,
+    required this.addOverlayModel,
+    required this.model,
+    this.onTapRightBtn,
+    super.key,
+    this.addLabel,
+    this.loadingWidget,
+    this.logoAppbar,
+    this.voidCallbackModels,
+    this.keySemantic,
+    this.labelSemantic,
+  });
+
+  final FavoritesKeyUsecase usecase;
+  final Function(BuildContext, FavoriteKey, List<FavoriteKey>) tapItem;
+  final CardMovePageModel model;
+  final Future<List<FavoriteKey>?> Function(BuildContext context)?
+      onTapRightBtn;
+  final OverlayModelFavorites addOverlayModel;
+  final OverlayModelFavorites editOverlayModel;
+  final String? addLabel;
+  final AlertDeleteModel alertDeleteModel;
+  final Widget? loadingWidget;
+  final Widget? logoAppbar;
+  final VoidCallbackModels? voidCallbackModels;
+  final String? labelSemantic;
+  final String? keySemantic;
+
+  @override
+  State<ListFavoritesPagePresenter> createState() =>
+      _ListFavoritesPagePresenterState();
+}
+
+class _ListFavoritesPagePresenterState
+    extends State<ListFavoritesPagePresenter> {
+  List<FavoriteKey> favorites = [];
+  StateWidget<FavoriteKey> state = const StateWidget.loading();
+  late FavoritesController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = FavoritesController(widget.usecase);
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => state = const StateWidget.loading());
+    final (data, error) = await controller.load();
+    if (error != null) {
+      setState(() {
+        state = StateWidget.error(error);
+      });
+      return;
+    }
+    setState(() {
+      favorites = List.from(data);
+      state = StateWidget.success(sortFavoritesAlphabetically(data));
+    });
+  }
+
+  void alert(String text) => BcAlertV2(
+        model: BcAlertV2Model(
+          type: BcAlertType.Success,
+          text: text,
+        ),
+        context: context,
+      ).showAlert();
+
+  Future<FavoriteKey?> openOverlay(
+    FavoriteKey? fav,
+    OverlayModelFavorites model,
+    VoidCallback? onCompleteCallback,
+    VoidCallback? tapPrimaryBtn,
+    VoidCallback? tapSecondaryBtn,
+  ) =>
+      favoriteOverlay(
+        context: context,
+        onComplete: (newFav) async {
+          alert(model.alerText);
+          if (!mounted) {
+            return;
+          }
+          onCompleteCallback?.call();
+          await _load();
+        },
+        model: model,
+        fav: fav,
+        controller: controller,
+        tapPrimaryBtn: tapPrimaryBtn,
+        tapSecondaryBtn: tapSecondaryBtn,
+      );
+
+  Future<void> delete(FavoriteKey fav) async {
+    final (_, error) = await controller.delete(fav);
+
+    if (error != null) {
+      BcGenericErrorHandler(
+        contextGenericError: context,
+        errorItem: BcErrorItem(
+          message: error.message,
+          title: error.reason,
+          type: ErrorType.ERROR,
+          category: BcErrorCategory.TOAST,
+        ),
+      ).showError();
+    } else {
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      setState(() {});
+      widget.voidCallbackModels?.onDeleteCompleteCallback?.call();
+      alert(widget.alertDeleteModel.alertConfirmText);
+    }
+  }
+
+  List<FavoriteKey> sortFavoritesAlphabetically(List<FavoriteKey> list) {
+    return List<FavoriteKey>.from(list)
+      ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CardMovePage<FavoriteKey>(
+      labelExtractor: (fav) => '${fav.label} ${fav.key}',
+      enabledSearch: favorites.length >= 7,
+      onBack: () {
+        widget.voidCallbackModels?.onBackCallback?.call();
+        Navigator.pop(context, favorites);
+      },
+      model: widget.model,
+      items: sortFavoritesAlphabetically(favorites),
+      logoAppbar: widget.logoAppbar,
+      loadingWidget: widget.loadingWidget,
+      state: state,
+      leadingBuilder: (_, fav) => ExcludeSemantics(
+        child: BcAvatar.initials(
+          initials: fav.label[0].capitalize(),
+          backgroundColor: getBackgroundColorAvatar(fav),
+        ),
+      ),
+      titleBuilder: (_, fav) => Semantics(
+        excludeSemantics: true,
+        label:
+            '${widget.labelSemantic ?? ''} ${fav.label} ${widget.keySemantic ?? ''} ${fav.key}',
+        child: Text(
+          fav.label,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      subtitleBuilder: (_, fav) => ExcludeSemantics(child: Text(fav.key)),
+      onAdd: () {
+        widget.voidCallbackModels?.onAddCallback?.call();
+        openOverlay(
+          null,
+          widget.addOverlayModel,
+          widget.voidCallbackModels?.onCompleteAddCallback,
+          widget.voidCallbackModels?.tapPrimaryBtnAddCallback,
+          widget.voidCallbackModels?.tapSecondaryBtnAddCallback,
+        );
+      },
+      onDelete: (FavoriteKey fav) async {
+        widget.voidCallbackModels?.onDeleteCallback?.call();
+        final result = await bcAlertDelete(
+          context,
+          widget.alertDeleteModel,
+          widget.voidCallbackModels?.tapPrimaryBtnDeleteModalCallback,
+          widget.voidCallbackModels?.tapSecundaryBtnDeleteModalCallback,
+        );
+        if (result) {
+          await delete(fav);
+        }
+      },
+      onEdit: (FavoriteKey fav) {
+        widget.voidCallbackModels?.onEditCallback?.call();
+        openOverlay(
+          fav,
+          widget.editOverlayModel,
+          widget.voidCallbackModels?.onCompleteEditCallback,
+          widget.voidCallbackModels?.tapPrimaryBtnEditCallback,
+          widget.voidCallbackModels?.tapSecondaryBtnEditCallback,
+        );
+      },
+      onTapCard: (FavoriteKey fav) {
+        widget.voidCallbackModels?.onTapCardCallback?.call();
+        widget.tapItem(context, fav, favorites);
+      },
+      onConfirmDelete: (fav) async {
+        widget.voidCallbackModels?.onConfirmDeleteCallback?.call();
+        return bcAlertDelete(
+          context,
+          widget.alertDeleteModel,
+          widget.voidCallbackModels?.tapPrimaryBtnDeleteModalCallback,
+          widget.voidCallbackModels?.tapSecundaryBtnDeleteModalCallback,
+        );
+      },
+      onDismissed: (fav) async {
+        widget.voidCallbackModels?.onDismissedCallback?.call();
+        await delete(fav);
+      },
+      shortcutsArguments: BcShortcutsArguments(
+        shortcutsLocalizations: [
+          BcShortcutItemModel(
+            icon: BdsFunctionalIcons.PLUS,
+            label: widget.addLabel ?? '',
+          ),
+        ],
+        onShortcutPressed: (_, __) {
+          widget.voidCallbackModels?.onAddCallback?.call();
+          openOverlay(
+            null,
+            widget.addOverlayModel,
+            widget.voidCallbackModels?.onCompleteAddCallback,
+            widget.voidCallbackModels?.tapPrimaryBtnAddCallback,
+            widget.voidCallbackModels?.tapSecondaryBtnAddCallback,
+          );
+        },
+      ),
+    );
+  }
+}
